@@ -41,7 +41,8 @@ export function MatrixBackground() {
         if (Math.random() > 0.95) {
             ctx.fillStyle = "#FFF"; 
         } else {
-            ctx.fillStyle = "#39ff14"; // Bright neon green for all non-white
+            ctx.fillStyle = "#0F380F"; // Dimmer green for most
+            if (Math.random() > 0.9) ctx.fillStyle = "#39ff14"; // Bright neon for some
         }
 
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
@@ -73,7 +74,7 @@ export function MatrixBackground() {
   return (
     <canvas 
       ref={canvasRef} 
-      className="fixed inset-0 z-0 opacity-40 pointer-events-none"
+      className="fixed inset-0 z-0 opacity-20 pointer-events-none"
     />
   );
 }
