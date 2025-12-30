@@ -193,9 +193,9 @@ export default function TerminalPage() {
         </div>
 
         {/* Right Column: Output */}
-        <div className="lg:col-span-7 h-full min-h-[500px]">
+        <div className="lg:col-span-7 h-full min-h-[500px] overflow-hidden">
           <TerminalCard title="OUTPUT STREAM" className="h-full flex flex-col" glow={!!currentOutput}>
-            <div className="flex-1 overflow-auto pr-2 relative min-h-[400px]">
+            <div className="flex-1 overflow-auto pr-2 relative min-h-0">
               <AnimatePresence mode="wait">
                 {generate.isPending ? (
                   <motion.div 

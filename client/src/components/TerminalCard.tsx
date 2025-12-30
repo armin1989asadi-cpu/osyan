@@ -33,7 +33,7 @@ export function TerminalCard({ children, className, title, glow = false }: Termi
         </div>
       )}
 
-      <div className="p-4 md:p-6 relative z-10">
+      <div className="p-4 md:p-6 relative z-10 flex-1 min-h-0 overflow-hidden">
         {children}
       </div>
     </div>

@@ -30,11 +30,12 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
         const char = text[currentIndex];
         
         // Add chunk size variability - type faster for spaces or common chars
-        const increment = Math.random() > 0.8 ? 3 : 1; 
+        // INCREASED SPEED for Farsi compatibility and better UX
+        const increment = Math.random() > 0.6 ? 5 : 2; 
         
         setDisplayedText(prev => prev + text.slice(currentIndex, currentIndex + increment));
         setCurrentIndex(prev => prev + increment);
-      }, 10);
+      }, 5);
       
       return () => clearTimeout(timeout);
     }
