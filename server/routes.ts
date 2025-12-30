@@ -66,10 +66,41 @@ export async function registerRoutes(
 
       const generatedText = response.candidates?.[0]?.content?.parts?.[0]?.text || "Generation failed.";
 
+      // Second pass for English translation if input was Persian
+      let englishPrompt = generatedText;
+      const isPersian = /[\u0600-\u06FF]/.test(input.idea);
+      if (isPersian) {
+        try {
+          const translationResponse = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: [{ role: "user", parts: [{ text: `Translate the following prompt into professional English while maintaining the structured 5-section format:\n\n${generatedText}` }] }]
+          });
+          englishPrompt = translationResponse.candidates?.[0]?.content?.parts?.[0]?.text || generatedText;
+        } catch (e) {
+          console.error("Translation error", e);
+        }
+      }
+
+      // Third pass for JSON conversion
+      let jsonPrompt = "{}";
+      try {
+        const jsonResponse = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{ role: "user", parts: [{ text: `Convert the following prompt into a clean JSON object with keys: "role", "context", "task", "constraints", "output_format". Return ONLY the JSON object:\n\n${englishPrompt}` }] }]
+        });
+        const rawJsonText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        const cleanJson = rawJsonText.replace(/```json|```/g, "").trim();
+        jsonPrompt = cleanJson;
+      } catch (e) {
+        console.error("JSON conversion error", e);
+      }
+
       const prompt = await storage.createPrompt({
         persona: input.persona,
         inputIdea: input.idea,
         generatedPrompt: generatedText,
+        englishPrompt,
+        jsonPrompt,
       });
 
       res.json(prompt);

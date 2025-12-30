@@ -25,8 +25,9 @@ const PERSONAS = [
 export default function TerminalPage() {
   const [selectedPersona, setSelectedPersona] = useState<typeof PERSONAS[number]["id"]>("Gemini");
   const [inputIdea, setInputIdea] = useState("");
-  const [currentOutput, setCurrentOutput] = useState("");
-  
+  const [currentOutput, setCurrentOutput] = useState<{ original: string, english?: string, json?: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<"original" | "english" | "json">("original");
+
   const generate = useGeneratePrompt();
   const history = usePromptsHistory();
 
@@ -34,22 +35,31 @@ export default function TerminalPage() {
     if (!inputIdea.trim()) return;
     
     try {
-      setCurrentOutput(""); // Clear previous
+      setCurrentOutput(null);
       const result = await generate.mutateAsync({
         persona: selectedPersona,
         idea: inputIdea
       });
-      setCurrentOutput(result.generatedPrompt);
+      setCurrentOutput({ 
+        original: result.generatedPrompt,
+        english: result.englishPrompt,
+        json: result.jsonPrompt 
+      });
+      setActiveTab("original");
     } catch (error) {
-      // Error is handled by global toast usually, or shown in output
-      setCurrentOutput("ERROR: NEURAL HANDSHAKE FAILED.\n" + (error as Error).message);
+      setCurrentOutput({ original: "ERROR: NEURAL HANDSHAKE FAILED.\n" + (error as Error).message });
     }
   };
 
-  const loadHistoryItem = (generatedPrompt: string, input: string, persona: string) => {
-    setInputIdea(input);
-    setSelectedPersona(persona as any);
-    setCurrentOutput(generatedPrompt);
+  const loadHistoryItem = (item: any) => {
+    setInputIdea(item.inputIdea);
+    setSelectedPersona(item.persona as any);
+    setCurrentOutput({ 
+      original: item.generatedPrompt,
+      english: item.englishPrompt,
+      json: item.jsonPrompt
+    });
+    setActiveTab("original");
   };
 
   return (
@@ -87,7 +97,7 @@ export default function TerminalPage() {
                 {history.data?.map((item) => (
                   <div 
                     key={item.id} 
-                    onClick={() => loadHistoryItem(item.generatedPrompt, item.inputIdea, item.persona)}
+                    onClick={() => loadHistoryItem(item)}
                     className="p-3 border border-border rounded hover:border-primary/50 cursor-pointer transition-colors group bg-black/40"
                   >
                     <div className="flex justify-between items-start mb-2">
@@ -195,7 +205,48 @@ export default function TerminalPage() {
         {/* Right Column: Output */}
         <div className="lg:col-span-7 h-full min-h-[500px] overflow-hidden">
           <TerminalCard title="OUTPUT STREAM" className="h-full flex flex-col" glow={!!currentOutput}>
-            <div className="flex-1 overflow-auto pr-2 relative min-h-0">
+            {currentOutput && (
+              <div className="flex items-center justify-between border-b border-border bg-black/20 p-2 gap-2">
+                <div className="flex gap-2">
+                  <Button 
+                    variant={activeTab === "original" ? "default" : "ghost"} 
+                    size="sm" 
+                    className="text-[10px] h-7"
+                    onClick={() => setActiveTab("original")}
+                  >
+                    ORIGINAL
+                  </Button>
+                  <Button 
+                    variant={activeTab === "english" ? "default" : "ghost"} 
+                    size="sm" 
+                    className="text-[10px] h-7"
+                    onClick={() => setActiveTab("english")}
+                  >
+                    ENGLISH
+                  </Button>
+                  <Button 
+                    variant={activeTab === "json" ? "default" : "ghost"} 
+                    size="sm" 
+                    className="text-[10px] h-7"
+                    onClick={() => setActiveTab("json")}
+                  >
+                    JSON
+                  </Button>
+                </div>
+                <Button 
+                   size="icon" 
+                   variant="ghost" 
+                   className="h-7 w-7 text-primary hover:bg-primary/20"
+                   onClick={() => {
+                     const textToCopy = activeTab === 'original' ? currentOutput.original : (activeTab === 'english' ? currentOutput.english : currentOutput.json);
+                     navigator.clipboard.writeText(textToCopy || "");
+                   }}
+                 >
+                   <History className="w-3 h-3 rotate-180" /> {/* Using an icon for copy since lucide might not be loaded with Copy */}
+                </Button>
+              </div>
+            )}
+            <div className="flex-1 overflow-auto pr-2 relative min-h-0 p-4">
               <AnimatePresence mode="wait">
                 {generate.isPending ? (
                   <motion.div 
@@ -212,11 +263,18 @@ export default function TerminalPage() {
                   </motion.div>
                 ) : currentOutput ? (
                   <motion.div
+                    key={activeTab}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="h-full"
                   >
-                    <TypewriterOutput text={currentOutput} />
+                    {activeTab === "json" ? (
+                      <pre className="text-xs text-primary/80 bg-black/40 p-4 rounded border border-primary/20 overflow-x-auto whitespace-pre">
+                        {currentOutput.json}
+                      </pre>
+                    ) : (
+                      <TypewriterOutput text={activeTab === "english" ? (currentOutput.english || currentOutput.original) : currentOutput.original} />
+                    )}
                   </motion.div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-primary/20 font-display text-2xl tracking-widest uppercase">
@@ -225,21 +283,6 @@ export default function TerminalPage() {
                 )}
               </AnimatePresence>
             </div>
-            
-            {currentOutput && (
-              <div className="pt-4 mt-4 border-t border-border flex justify-end gap-2">
-                 <Button 
-                   size="sm" 
-                   variant="ghost" 
-                   className="text-xs hover:bg-primary/20 hover:text-primary"
-                   onClick={() => {
-                     navigator.clipboard.writeText(currentOutput);
-                   }}
-                 >
-                   COPY TO CLIPBOARD
-                 </Button>
-              </div>
-            )}
           </TerminalCard>
         </div>
       </main>

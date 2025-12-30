@@ -7,6 +7,8 @@ export const prompts = pgTable("prompts", {
   persona: text("persona").notNull(),
   inputIdea: text("input_idea").notNull(),
   generatedPrompt: text("generated_prompt").notNull(),
+  englishPrompt: text("english_prompt"),
+  jsonPrompt: text("json_prompt"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
