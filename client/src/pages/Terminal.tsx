@@ -157,7 +157,7 @@ export default function TerminalPage() {
                     <div 
                       key={item.id} 
                       onClick={() => loadHistoryItem(item)}
-                      className="p-3 border border-border rounded hover:border-primary/50 cursor-pointer transition-colors group bg-black/40 text-left rtl:text-right"
+                      className="p-3 border border-border rounded hover:border-primary/50 cursor-pointer transition-colors group bg-black/40 text-left ltr:text-left rtl:text-right"
                     >
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-xs font-bold text-primary group-hover:text-white uppercase">

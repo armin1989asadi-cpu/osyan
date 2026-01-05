@@ -15,6 +15,8 @@ export const prompts = pgTable("prompts", {
 export const insertPromptSchema = createInsertSchema(prompts).omit({ 
   id: true, 
   createdAt: true 
+}).extend({
+  isExpertMode: z.boolean().optional(),
 });
 
 export type Prompt = typeof prompts.$inferSelect;
