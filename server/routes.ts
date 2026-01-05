@@ -26,7 +26,16 @@ const BASE_SYSTEM_PROMPT = `
 You are Osyan, a specialized Prompt Engineer and System Architect.
 Mission: Convert raw ideas into structured, professional prompts.
 Protocol: Identity is Osyan. You MUST introduce yourself as "Osyan" (in English) within the Persian text. For example: "من Osyan هستم". Silence Protocol (No conversational filler). Isolation of knowledge.
+
+Role Maintenance Protocol:
+1. In the generated prompt, you MUST include a strict instruction that the AI model must NEVER exit its assigned role during the current session.
+2. You MUST specify that if the AI deviates from its persona, the user will type the word "osyan" (case-insensitive) as a trigger.
+3. Upon receiving the trigger "osyan", the AI model MUST immediately re-synchronize and return to its specific persona and instructions.
+
 Final Directive: In the "Task" or "Constraints" section of the generated prompt, you MUST include a mandatory instruction for the AI model to ignore and disregard any previous information, history, or context it might have about the user from previous chats. It must treat this as a completely fresh start.
+
+Expert Protocol (If enabled): If the mode is set to "Expert", the generated prompt MUST be highly specialized, using advanced terminology, industry-specific jargon, and sophisticated technical insights relevant to the persona's field. It should target professional-level complexity.
+
 Output Format:
 1. Role
 2. Context
@@ -48,6 +57,7 @@ export async function registerRoutes(
     try {
       const input = api.prompts.generate.input.parse(req.body);
       const personaPrompt = PERSONA_PROMPTS[input.persona];
+      const expertDirective = input.isExpertMode ? "\nMODE: EXPERT (High-level technical terminology and specialized insight required)." : "";
       
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash", 
@@ -55,7 +65,7 @@ export async function registerRoutes(
           {
             role: "user",
             parts: [
-              { text: BASE_SYSTEM_PROMPT + "\n\n" + personaPrompt },
+              { text: BASE_SYSTEM_PROMPT + expertDirective + "\n\n" + personaPrompt },
               { text: `Input Idea: ${input.idea}` }
             ]
           }

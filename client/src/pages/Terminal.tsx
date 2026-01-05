@@ -25,6 +25,8 @@ const PERSONAS = [
 export default function TerminalPage() {
   const [selectedPersona, setSelectedPersona] = useState<typeof PERSONAS[number]["id"]>("Gemini");
   const [inputIdea, setInputIdea] = useState("");
+  const [isExpertMode, setIsExpertMode] = useState(false);
+  const [language, setLanguage] = useState<"en" | "fa">("en");
   const [currentOutput, setCurrentOutput] = useState<{ original: string, english?: string, json?: string } | null>(null);
   const [activeTab, setActiveTab] = useState<"original" | "english" | "json">("original");
 
@@ -38,7 +40,8 @@ export default function TerminalPage() {
       setCurrentOutput(null);
       const result = await generate.mutateAsync({
         persona: selectedPersona,
-        idea: inputIdea
+        idea: inputIdea,
+        isExpertMode
       });
       setCurrentOutput({ 
         original: result.generatedPrompt,
@@ -62,8 +65,49 @@ export default function TerminalPage() {
     setActiveTab("original");
   };
 
+  const t = {
+    en: {
+      status: "SYSTEM ONLINE",
+      latency: "LATENCY: 12ms",
+      logs: "LOGS",
+      opLogs: "OPERATION LOGS",
+      neuralConfig: "NEURAL CONFIGURATION",
+      expertMode: "EXPERT PROTOCOL",
+      inputVector: "Input Vector",
+      chars: "CHARS",
+      placeholder: "Enter raw directive here...",
+      execute: "EXECUTE",
+      processing: "PROCESSING...",
+      outputStream: "OUTPUT STREAM",
+      original: "ORIGINAL",
+      english: "ENGLISH",
+      json: "JSON",
+      awaiting: "AWAITING INPUT",
+      copy: "COPY TO CLIPBOARD"
+    },
+    fa: {
+      status: "سیستم فعال",
+      latency: "تاخیر: ۱۲ میلی‌ثانیه",
+      logs: "لاگ‌ها",
+      opLogs: "گزارش‌های عملیات",
+      neuralConfig: "تنظیمات عصبی",
+      expertMode: "پروتکل تخصصی",
+      inputVector: "ورودی ایده",
+      chars: "کاراکتر",
+      placeholder: "دستور خام را اینجا وارد کنید...",
+      execute: "اجرا",
+      processing: "در حال پردازش...",
+      outputStream: "خروجی سیستم",
+      original: "اصلی",
+      english: "انگلیسی",
+      json: "JSON",
+      awaiting: "در انتظار ورودی",
+      copy: "کپی در حافظه"
+    }
+  }[language];
+
   return (
-    <div className="min-h-screen bg-background text-foreground font-mono relative overflow-hidden flex flex-col">
+    <div className={cn("min-h-screen bg-background text-foreground font-mono relative overflow-hidden flex flex-col", language === "fa" && "rtl text-right")}>
       <MatrixBackground />
       <CRTEffect />
 
@@ -73,50 +117,66 @@ export default function TerminalPage() {
           <GlitchLogo />
           <div className="hidden md:flex items-center gap-2 text-xs text-primary/60 border-l border-border pl-4">
             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            SYSTEM ONLINE
+            {t.status}
             <span className="opacity-50 mx-2">|</span>
-            LATENCY: 12ms
+            {t.latency}
           </div>
         </div>
 
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="outline" className="border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
-              <History className="w-4 h-4 mr-2" />
-              LOGS
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="bg-background/95 border-l border-primary/30 w-[400px]">
-            <SheetHeader>
-              <SheetTitle className="font-display text-primary tracking-widest border-b border-primary/20 pb-4">
-                OPERATION LOGS
-              </SheetTitle>
-            </SheetHeader>
-            <ScrollArea className="h-[calc(100vh-100px)] mt-4">
-              <div className="space-y-4 pr-4">
-                {history.data?.map((item) => (
-                  <div 
-                    key={item.id} 
-                    onClick={() => loadHistoryItem(item)}
-                    className="p-3 border border-border rounded hover:border-primary/50 cursor-pointer transition-colors group bg-black/40"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs font-bold text-primary group-hover:text-white uppercase">
-                        [{item.persona}]
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {item.createdAt && formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
-                      </span>
+        <div className="flex items-center gap-2">
+          <div className="flex bg-black/40 border border-primary/20 rounded p-0.5">
+            <button 
+              onClick={() => setLanguage("en")}
+              className={cn("px-2 py-1 text-[10px] rounded transition-colors", language === "en" ? "bg-primary text-black" : "text-primary/60 hover:text-primary")}
+            >
+              EN
+            </button>
+            <button 
+              onClick={() => setLanguage("fa")}
+              className={cn("px-2 py-1 text-[10px] rounded transition-colors", language === "fa" ? "bg-primary text-black" : "text-primary/60 hover:text-primary")}
+            >
+              FA
+            </button>
+          </div>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
+                <History className="w-4 h-4 mr-2" />
+                {t.logs}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side={language === "fa" ? "left" : "right"} className="bg-background/95 border-l border-primary/30 w-[400px]">
+              <SheetHeader>
+                <SheetTitle className="font-display text-primary tracking-widest border-b border-primary/20 pb-4">
+                  {t.opLogs}
+                </SheetTitle>
+              </SheetHeader>
+              <ScrollArea className="h-[calc(100vh-100px)] mt-4">
+                <div className="space-y-4 pr-4">
+                  {history.data?.map((item) => (
+                    <div 
+                      key={item.id} 
+                      onClick={() => loadHistoryItem(item)}
+                      className="p-3 border border-border rounded hover:border-primary/50 cursor-pointer transition-colors group bg-black/40 text-left rtl:text-right"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="text-xs font-bold text-primary group-hover:text-white uppercase">
+                          [{item.persona}]
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {item.createdAt && formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2 font-mono opacity-80">
+                        {item.inputIdea}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2 font-mono opacity-80">
-                      {item.inputIdea}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </SheetContent>
-        </Sheet>
+                  ))}
+                </div>
+              </ScrollArea>
+            </SheetContent>
+          </Sheet>
+        </div>
       </header>
 
       {/* Main Content */}
@@ -124,8 +184,8 @@ export default function TerminalPage() {
         
         {/* Left Column: Controls */}
         <div className="lg:col-span-5 flex flex-col gap-6">
-          <TerminalCard title="NEURAL CONFIGURATION">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
+          <TerminalCard title={t.neuralConfig}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
               {PERSONAS.map((p) => {
                 const Icon = p.icon;
                 const isActive = selectedPersona === p.id;
@@ -150,15 +210,28 @@ export default function TerminalPage() {
               })}
             </div>
 
+            <div className="flex items-center gap-2 mb-6 p-2 border border-primary/20 bg-black/40">
+              <input 
+                type="checkbox" 
+                id="expert-mode" 
+                checked={isExpertMode}
+                onChange={(e) => setIsExpertMode(e.target.checked)}
+                className="w-4 h-4 accent-primary"
+              />
+              <label htmlFor="expert-mode" className="text-xs text-primary font-bold cursor-pointer">
+                {t.expertMode}
+              </label>
+            </div>
+
             <div className="space-y-4">
               <div className="flex justify-between items-baseline">
-                <label className="text-xs text-primary/80 tracking-widest uppercase">Input Vector</label>
-                <span className="text-[10px] text-muted-foreground">{inputIdea.length} CHARS</span>
+                <label className="text-xs text-primary/80 tracking-widest uppercase">{t.inputVector}</label>
+                <span className="text-[10px] text-muted-foreground">{inputIdea.length} {t.chars}</span>
               </div>
               <Textarea 
                 value={inputIdea}
                 onChange={(e) => setInputIdea(e.target.value)}
-                placeholder="Enter raw directive here..."
+                placeholder={t.placeholder}
                 className="min-h-[200px] bg-black/50 border-primary/30 text-primary placeholder:text-primary/20 font-mono text-sm resize-none focus:border-primary focus:ring-1 focus:ring-primary/50"
               />
               
@@ -173,10 +246,10 @@ export default function TerminalPage() {
                 )}
               >
                 {generate.isPending ? (
-                  <span className="animate-pulse">PROCESSING...</span>
+                  <span className="animate-pulse">{t.processing}</span>
                 ) : (
                   <>
-                    EXECUTE
+                    {t.execute}
                     <span className="absolute right-0 top-0 w-2 h-2 border-t border-r border-current opacity-50" />
                     <span className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-current opacity-50" />
                   </>
@@ -204,7 +277,7 @@ export default function TerminalPage() {
 
         {/* Right Column: Output */}
         <div className="lg:col-span-7 h-full min-h-[500px] overflow-hidden">
-          <TerminalCard title="OUTPUT STREAM" className="h-full flex flex-col" glow={!!currentOutput}>
+          <TerminalCard title={t.outputStream} className="h-full flex flex-col" glow={!!currentOutput}>
             {currentOutput && (
               <div className="flex items-center justify-between border-b border-border bg-black/20 p-2 gap-2">
                 <div className="flex gap-2">
@@ -214,7 +287,7 @@ export default function TerminalPage() {
                     className="text-[10px] h-7"
                     onClick={() => setActiveTab("original")}
                   >
-                    ORIGINAL
+                    {t.original}
                   </Button>
                   <Button 
                     variant={activeTab === "english" ? "default" : "ghost"} 
@@ -222,7 +295,7 @@ export default function TerminalPage() {
                     className="text-[10px] h-7"
                     onClick={() => setActiveTab("english")}
                   >
-                    ENGLISH
+                    {t.english}
                   </Button>
                   <Button 
                     variant={activeTab === "json" ? "default" : "ghost"} 
@@ -230,19 +303,20 @@ export default function TerminalPage() {
                     className="text-[10px] h-7"
                     onClick={() => setActiveTab("json")}
                   >
-                    JSON
+                    {t.json}
                   </Button>
                 </div>
                 <Button 
-                   size="icon" 
+                   size="sm" 
                    variant="ghost" 
-                   className="h-7 w-7 text-primary hover:bg-primary/20"
+                   className="h-7 text-xs text-primary hover:bg-primary/20 gap-2"
                    onClick={() => {
                      const textToCopy = activeTab === 'original' ? currentOutput.original : (activeTab === 'english' ? currentOutput.english : currentOutput.json);
                      navigator.clipboard.writeText(textToCopy || "");
                    }}
                  >
-                   <History className="w-3 h-3 rotate-180" /> {/* Using an icon for copy since lucide might not be loaded with Copy */}
+                   <History className="w-3 h-3 rotate-180" />
+                   {t.copy}
                 </Button>
               </div>
             )}
@@ -256,7 +330,7 @@ export default function TerminalPage() {
                     className="flex flex-col items-center justify-center h-full text-primary/50 gap-4"
                   >
                     <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-                    <div className="font-mono text-sm animate-pulse">OPTIMIZING TOKENS...</div>
+                    <div className="font-mono text-sm animate-pulse">{t.processing}</div>
                     <div className="font-mono text-xs opacity-50">
                       Accessing {selectedPersona} Neural Net
                     </div>
@@ -278,7 +352,7 @@ export default function TerminalPage() {
                   </motion.div>
                 ) : (
                   <div className="flex items-center justify-center h-full text-primary/20 font-display text-2xl tracking-widest uppercase">
-                    AWAITING INPUT
+                    {t.awaiting}
                   </div>
                 )}
               </AnimatePresence>
