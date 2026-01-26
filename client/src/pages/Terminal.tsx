@@ -26,6 +26,7 @@ export default function TerminalPage() {
   const [selectedPersona, setSelectedPersona] = useState<typeof PERSONAS[number]["id"]>("Gemini");
   const [inputIdea, setInputIdea] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isImageLoading, setIsImageLoading] = useState(false);
   const [isExpertMode, setIsExpertMode] = useState(false);
   const [language, setLanguage] = useState<"en" | "fa">("en");
   const [currentOutput, setCurrentOutput] = useState<{ original: string, english?: string, json?: string } | null>(null);
@@ -76,6 +77,8 @@ export default function TerminalPage() {
       neuralConfig: "NEURAL CONFIGURATION",
       expertMode: "EXPERT PROTOCOL",
       reverseImage: "REVERSE IMAGE PROTOCOL",
+      analyzeImage: "ANALYZE IMAGE",
+      uploading: "UPLOADING...",
       inputVector: "Input Vector",
       chars: "CHARS",
       placeholder: "Enter raw directive or image analysis...",
@@ -96,6 +99,8 @@ export default function TerminalPage() {
       neuralConfig: "تنظیمات عصبی",
       expertMode: "پروتکل تخصصی",
       reverseImage: "مهندسی معکوس تصویر",
+      analyzeImage: "تحلیل تصویر",
+      uploading: "در حال دریافت...",
       inputVector: "ورودی ایده",
       chars: "کاراکتر",
       placeholder: "دستور خام یا تحلیل تصویر را اینجا وارد کنید...",
@@ -241,27 +246,56 @@ export default function TerminalPage() {
                   )}
                 </div>
                 {!selectedImage ? (
-                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-primary/20 p-4 cursor-pointer hover:border-primary/50 transition-colors">
-                    <History className="w-6 h-6 mb-2 opacity-50" />
-                    <span className="text-[10px] text-primary/60 uppercase">Upload Source Fragment</span>
+                  <label className={cn(
+                    "flex flex-col items-center justify-center border-2 border-dashed border-primary/20 p-4 cursor-pointer hover:border-primary/50 transition-colors relative overflow-hidden",
+                    isImageLoading && "cursor-wait opacity-50"
+                  )}>
+                    {isImageLoading ? (
+                      <div className="flex flex-col items-center">
+                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
+                        <span className="text-[10px] text-primary uppercase animate-pulse">{t.uploading}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <History className="w-6 h-6 mb-2 opacity-50" />
+                        <span className="text-[10px] text-primary/60 uppercase">Upload Source Fragment</span>
+                      </>
+                    )}
                     <input 
                       type="file" 
                       accept="image/*" 
                       className="hidden" 
+                      disabled={isImageLoading}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          setIsImageLoading(true);
                           const reader = new FileReader();
-                          reader.onloadend = () => setSelectedImage(reader.result as string);
+                          reader.onloadstart = () => setIsImageLoading(true);
+                          reader.onloadend = () => {
+                            setSelectedImage(reader.result as string);
+                            setIsImageLoading(false);
+                          };
+                          reader.onerror = () => setIsImageLoading(false);
                           reader.readAsDataURL(file);
                         }
                       }}
                     />
                   </label>
                 ) : (
-                  <div className="relative aspect-video border border-primary/50 overflow-hidden">
+                  <div className="relative aspect-video border border-primary/50 overflow-hidden group">
                     <img src={selectedImage} className="w-full h-full object-cover opacity-80" />
                     <div className="absolute inset-0 bg-primary/10 animate-pulse pointer-events-none" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button 
+                        size="sm"
+                        onClick={handleGenerate}
+                        disabled={generate.isPending}
+                        className="bg-primary text-black hover:bg-primary/90 font-bold uppercase text-[10px]"
+                      >
+                        {generate.isPending ? t.processing : t.analyzeImage}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
