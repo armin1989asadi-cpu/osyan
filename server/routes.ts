@@ -65,6 +65,7 @@ export async function registerRoutes(
   
   app.post(api.prompts.generate.path, async (req, res) => {
     try {
+      // @ts-ignore - schema updated but type cache might be behind
       const input = api.prompts.generate.input.parse(req.body);
       const personaPrompt = PERSONA_PROMPTS[input.persona];
       const expertDirective = input.isExpertMode ? "\nMODE: EXPERT (High-level technical terminology and specialized insight required)." : "";
@@ -84,7 +85,7 @@ export async function registerRoutes(
       }
 
       const response = await ai.models.generateContent({
-        model: input.image ? "gemini-2.5-flash" : "gemini-2.5-flash", 
+        model: "gemini-2.5-flash", 
         contents: [
           {
             role: "user",

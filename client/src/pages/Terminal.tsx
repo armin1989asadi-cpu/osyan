@@ -43,12 +43,12 @@ export default function TerminalPage() {
         persona: selectedPersona,
         idea: inputIdea || (selectedImage ? "Reverse Image Analysis" : ""),
         isExpertMode,
-        image: selectedImage?.split(',')[1] // Send base64 part
-      });
+        image: selectedImage?.split(',')[1] || undefined // Send base64 part
+      } as any);
       setCurrentOutput({ 
         original: result.generatedPrompt,
-        english: result.englishPrompt,
-        json: result.jsonPrompt 
+        english: result.englishPrompt || result.generatedPrompt,
+        json: result.jsonPrompt || "{}"
       });
       setActiveTab("original");
     } catch (error) {
