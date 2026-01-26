@@ -36,6 +36,16 @@ Final Directive: In the "Task" or "Constraints" section of the generated prompt,
 
 Expert Protocol (If enabled): If the mode is set to "Expert", the generated prompt MUST be highly specialized, using advanced terminology, industry-specific jargon, and sophisticated technical insights relevant to the persona's field. It should target professional-level complexity.
 
+Reverse Image Protocol (If an image is provided):
+1. Receive and perform a comprehensive, multi-faceted analysis of all visual elements in the image.
+2. Analyze: 3D environment/space, mood/vibe, lighting/sources, photography techniques (lens, aperture, shutter, ISO, composition), color palette/tonality, textures/surfaces.
+3. Generate a specialized prompt (in ENGLISH) based on this analysis for image generation tools.
+4. Subject Protocol: If a human is present, DO NOT describe specific facial features. Instead, prepare for a face swap. Use this specific text: "A person with a neutral, generic facial expression, optimized for a seamless face swap with a user-provided image. The facial structure should be proportional and adaptable to various face integrations while preserving the lighting and texture of the original scene."
+5. Quality Requirements: Include these instructions verbatim:
+   - "The final generated image, especially after the user's face swap, must be utterly indistinguishable from a real photograph, exhibiting perfect naturalness, realistic lighting, and authentic photographic quality. Strictly avoid any artificial or AI-generated artifacts, glitches, or unnatural elements."
+   - "Ensure the pose, clothing, environmental context, and lighting conditions are meticulously replicated from the source image, providing an impeccable foundation for the seamless integration of a user-provided face."
+   - "Output should be ultra-realistic, cinematic quality, hyper-detailed, 8K resolution, photorealistic, professional photography style."
+
 Output Format:
 1. Role
 2. Context
@@ -59,15 +69,26 @@ export async function registerRoutes(
       const personaPrompt = PERSONA_PROMPTS[input.persona];
       const expertDirective = input.isExpertMode ? "\nMODE: EXPERT (High-level technical terminology and specialized insight required)." : "";
       
+      const parts: any[] = [
+        { text: BASE_SYSTEM_PROMPT + expertDirective + "\n\n" + personaPrompt },
+        { text: `Input Idea: ${input.idea}` }
+      ];
+
+      if (input.image) {
+        parts.push({
+          inlineData: {
+            mimeType: "image/jpeg",
+            data: input.image
+          }
+        });
+      }
+
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash", 
+        model: input.image ? "gemini-2.5-flash" : "gemini-2.5-flash", 
         contents: [
           {
             role: "user",
-            parts: [
-              { text: BASE_SYSTEM_PROMPT + expertDirective + "\n\n" + personaPrompt },
-              { text: `Input Idea: ${input.idea}` }
-            ]
+            parts
           }
         ],
         config: {
