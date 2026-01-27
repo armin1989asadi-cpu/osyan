@@ -76,10 +76,12 @@ export async function registerRoutes(
       ];
 
       if (input.image) {
+        // Standardize base64 for Gemini
+        const base64Data = input.image.includes(',') ? input.image.split(',')[1] : input.image;
         parts.push({
           inlineData: {
             mimeType: "image/jpeg",
-            data: input.image
+            data: base64Data
           }
         });
       }

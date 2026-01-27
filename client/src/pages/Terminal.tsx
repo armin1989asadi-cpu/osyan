@@ -44,7 +44,7 @@ export default function TerminalPage() {
         persona: selectedPersona,
         idea: inputIdea || (selectedImage ? "Reverse Image Analysis" : ""),
         isExpertMode,
-        image: selectedImage?.split(',')[1] || undefined // Send base64 part
+        image: selectedImage || undefined // Send full data URL, backend will handle split
       } as any);
       setCurrentOutput({ 
         original: result.generatedPrompt,
