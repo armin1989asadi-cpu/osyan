@@ -421,11 +421,13 @@ export default function TerminalPage() {
                     className="h-full"
                   >
                     {activeTab === "json" ? (
-                      <pre className="text-xs text-primary/80 bg-black/40 p-4 rounded border border-primary/20 overflow-x-auto whitespace-pre">
+                      <pre className="text-xs text-primary/80 bg-black/40 p-4 rounded border border-primary/20 overflow-x-auto whitespace-pre ltr">
                         {currentOutput.json}
                       </pre>
                     ) : (
-                      <TypewriterOutput text={activeTab === "english" ? (currentOutput.english || currentOutput.original) : currentOutput.original} />
+                      <div className={cn(activeTab === "original" && language === "fa" ? "rtl text-right" : "ltr text-left")}>
+                        <TypewriterOutput text={activeTab === "english" ? (currentOutput.english || currentOutput.original) : currentOutput.original} />
+                      </div>
                     )}
                   </motion.div>
                 ) : (

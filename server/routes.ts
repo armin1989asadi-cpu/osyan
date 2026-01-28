@@ -80,7 +80,7 @@ export async function registerRoutes(
         const base64Data = input.image.includes(',') ? input.image.split(',')[1] : input.image;
         parts.push({
           inlineData: {
-            mimeType: "image/jpeg",
+            mimeType: "image/png", // Use png as a safe default for better compatibility
             data: base64Data
           }
         });
@@ -121,7 +121,7 @@ export async function registerRoutes(
       try {
         const jsonResponse = await ai.models.generateContent({
           model: "gemini-2.5-flash",
-          contents: [{ role: "user", parts: [{ text: `Convert the following prompt into a clean JSON object with keys: "role", "context", "task", "constraints", "output_format". Return ONLY the JSON object:\n\n${englishPrompt}` }] }]
+          contents: [{ role: "user", parts: [{ text: `Convert the following prompt into a clean JSON object with keys: "role", "context", "task", "constraints", "output_format". Return ONLY the JSON object. If this is an image generation prompt, structure it similarly with relevant descriptive keys:\n\n${englishPrompt}` }] }]
         });
         const rawJsonText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         const cleanJson = rawJsonText.replace(/```json|```/g, "").trim();
