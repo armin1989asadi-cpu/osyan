@@ -38,14 +38,14 @@ export default function Landing() {
               desc="دسترسی همزمان به ۵ هسته‌ی پردازشی برتر جهان: Gemini, GPT-4, Grok, Claude و معمار ارشد."
             />
             <FeatureCard 
-              icon={<Cpu className="w-8 h-8" />}
-              title="مهندسی معکوس تصویر"
-              desc="تحلیل عمیق بصری و تولید پرامپت‌های انگلیسی دقیق برای بازتولید تصاویر با بالاترین کیفیت."
-            />
-            <FeatureCard 
               icon={<Target className="w-8 h-8" />}
               title="پروتکل تخصصی (Expert)"
               desc="فراتر از محدودیت‌ها. تولید پرامپت‌های مهندسی شده با ترمینولوژی فوق‌تخصصی برای پروژه‌های حساس."
+            />
+            <FeatureCard 
+              icon={<Lock className="w-8 h-8" />}
+              title="امنیت سایبرنتیک"
+              desc="پروتکل خود‌-اصلاح‌گر Osyan برای ثبات نقش و پاکسازی کامل تاریخچه در هر نشست."
             />
           </div>
 

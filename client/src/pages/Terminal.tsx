@@ -25,8 +25,6 @@ const PERSONAS = [
 export default function TerminalPage() {
   const [selectedPersona, setSelectedPersona] = useState<typeof PERSONAS[number]["id"]>("Gemini");
   const [inputIdea, setInputIdea] = useState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [isImageLoading, setIsImageLoading] = useState(false);
   const [isExpertMode, setIsExpertMode] = useState(false);
   const [language, setLanguage] = useState<"en" | "fa">("en");
   const [currentOutput, setCurrentOutput] = useState<{ original: string, english?: string, json?: string } | null>(null);
@@ -36,20 +34,19 @@ export default function TerminalPage() {
   const history = usePromptsHistory();
 
   const handleGenerate = async () => {
-    if (!inputIdea.trim() && !selectedImage) return;
+    if (!inputIdea.trim()) return;
     
     try {
       setCurrentOutput(null);
       const result = await generate.mutateAsync({
         persona: selectedPersona,
-        idea: inputIdea || (selectedImage ? "Reverse Image Analysis" : ""),
-        isExpertMode,
-        image: selectedImage || undefined // Send full data URL, backend will handle split
-      } as any);
+        idea: inputIdea,
+        isExpertMode
+      });
       setCurrentOutput({ 
         original: result.generatedPrompt,
-        english: result.englishPrompt || result.generatedPrompt,
-        json: result.jsonPrompt || "{}"
+        english: result.englishPrompt,
+        json: result.jsonPrompt 
       });
       setActiveTab("original");
     } catch (error) {
@@ -76,12 +73,9 @@ export default function TerminalPage() {
       opLogs: "OPERATION LOGS",
       neuralConfig: "NEURAL CONFIGURATION",
       expertMode: "EXPERT PROTOCOL",
-      reverseImage: "REVERSE IMAGE PROTOCOL",
-      analyzeImage: "ANALYZE IMAGE",
-      uploading: "UPLOADING...",
       inputVector: "Input Vector",
       chars: "CHARS",
-      placeholder: "Enter raw directive or image analysis...",
+      placeholder: "Enter raw directive here...",
       execute: "EXECUTE",
       processing: "PROCESSING...",
       outputStream: "OUTPUT STREAM",
@@ -98,12 +92,9 @@ export default function TerminalPage() {
       opLogs: "گزارش‌های عملیات",
       neuralConfig: "تنظیمات عصبی",
       expertMode: "پروتکل تخصصی",
-      reverseImage: "مهندسی معکوس تصویر",
-      analyzeImage: "تحلیل تصویر",
-      uploading: "در حال دریافت...",
       inputVector: "ورودی ایده",
       chars: "کاراکتر",
-      placeholder: "دستور خام یا تحلیل تصویر را اینجا وارد کنید...",
+      placeholder: "دستور خام را اینجا وارد کنید...",
       execute: "اجرا",
       processing: "در حال پردازش...",
       outputStream: "خروجی سیستم",
@@ -219,86 +210,17 @@ export default function TerminalPage() {
               })}
             </div>
 
-            <div className="flex flex-col gap-2 mb-6">
-              <div className="flex items-center gap-2 p-2 border border-primary/20 bg-black/40">
-                <input 
-                  type="checkbox" 
-                  id="expert-mode" 
-                  checked={isExpertMode}
-                  onChange={(e) => setIsExpertMode(e.target.checked)}
-                  className="w-4 h-4 accent-primary"
-                />
-                <label htmlFor="expert-mode" className="text-xs text-primary font-bold cursor-pointer">
-                  {t.expertMode}
-                </label>
-              </div>
-
-              <div className="p-2 border border-primary/20 bg-black/40">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-primary uppercase font-bold">{t.reverseImage}</span>
-                  {selectedImage && (
-                    <button 
-                      onClick={() => setSelectedImage(null)}
-                      className="text-[10px] text-red-500 hover:text-red-400 uppercase"
-                    >
-                      [REMOVE]
-                    </button>
-                  )}
-                </div>
-                {!selectedImage ? (
-                  <label className={cn(
-                    "flex flex-col items-center justify-center border-2 border-dashed border-primary/20 p-4 cursor-pointer hover:border-primary/50 transition-colors relative overflow-hidden",
-                    isImageLoading && "cursor-wait opacity-50"
-                  )}>
-                    {isImageLoading ? (
-                      <div className="flex flex-col items-center">
-                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
-                        <span className="text-[10px] text-primary uppercase animate-pulse">{t.uploading}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <History className="w-6 h-6 mb-2 opacity-50" />
-                        <span className="text-[10px] text-primary/60 uppercase">Upload Source Fragment</span>
-                      </>
-                    )}
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      disabled={isImageLoading}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setIsImageLoading(true);
-                          const reader = new FileReader();
-                          reader.onloadstart = () => setIsImageLoading(true);
-                          reader.onloadend = () => {
-                            setSelectedImage(reader.result as string);
-                            setIsImageLoading(false);
-                          };
-                          reader.onerror = () => setIsImageLoading(false);
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                  </label>
-                ) : (
-                  <div className="relative aspect-video border border-primary/50 overflow-hidden group">
-                    <img src={selectedImage} className="w-full h-full object-cover opacity-80" />
-                    <div className="absolute inset-0 bg-primary/10 animate-pulse pointer-events-none" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button 
-                        size="sm"
-                        onClick={handleGenerate}
-                        disabled={generate.isPending}
-                        className="bg-primary text-black hover:bg-primary/90 font-bold uppercase text-[10px]"
-                      >
-                        {generate.isPending ? t.processing : t.analyzeImage}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <div className="flex items-center gap-2 mb-6 p-2 border border-primary/20 bg-black/40">
+              <input 
+                type="checkbox" 
+                id="expert-mode" 
+                checked={isExpertMode}
+                onChange={(e) => setIsExpertMode(e.target.checked)}
+                className="w-4 h-4 accent-primary"
+              />
+              <label htmlFor="expert-mode" className="text-xs text-primary font-bold cursor-pointer">
+                {t.expertMode}
+              </label>
             </div>
 
             <div className="space-y-4">
@@ -421,13 +343,11 @@ export default function TerminalPage() {
                     className="h-full"
                   >
                     {activeTab === "json" ? (
-                      <pre className="text-xs text-primary/80 bg-black/40 p-4 rounded border border-primary/20 overflow-x-auto whitespace-pre ltr text-left">
+                      <pre className="text-xs text-primary/80 bg-black/40 p-4 rounded border border-primary/20 overflow-x-auto whitespace-pre">
                         {currentOutput.json}
                       </pre>
                     ) : (
-                      <div className={cn(activeTab === "original" && language === "fa" ? "rtl text-right" : "ltr text-left")}>
-                        <TypewriterOutput text={activeTab === "english" ? (currentOutput.english || currentOutput.original) : currentOutput.original} />
-                      </div>
+                      <TypewriterOutput text={activeTab === "english" ? (currentOutput.english || currentOutput.original) : currentOutput.original} />
                     )}
                   </motion.div>
                 ) : (
