@@ -421,7 +421,7 @@ export default function TerminalPage() {
                     className="h-full"
                   >
                     {activeTab === "json" ? (
-                      <pre className="text-xs text-primary/80 bg-black/40 p-4 rounded border border-primary/20 overflow-x-auto whitespace-pre ltr">
+                      <pre className="text-xs text-primary/80 bg-black/40 p-4 rounded border border-primary/20 overflow-x-auto whitespace-pre ltr text-left">
                         {currentOutput.json}
                       </pre>
                     ) : (

@@ -77,10 +77,14 @@ export async function registerRoutes(
 
       if (input.image) {
         // Standardize base64 for Gemini
-        const base64Data = input.image.includes(',') ? input.image.split(',')[1] : input.image;
+        // Remove data URL prefix if present and handle padding
+        let base64Data = input.image.includes(',') ? input.image.split(',')[1] : input.image;
+        // Basic sanitization
+        base64Data = base64Data.trim().replace(/\s/g, '');
+        
         parts.push({
           inlineData: {
-            mimeType: "image/png", // Use png as a safe default for better compatibility
+            mimeType: "image/jpeg", // Gemini is very stable with jpeg
             data: base64Data
           }
         });
