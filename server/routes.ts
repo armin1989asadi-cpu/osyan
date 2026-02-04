@@ -60,7 +60,7 @@ export async function registerRoutes(
       const expertDirective = input.isExpertMode ? "\nMODE: EXPERT (High-level technical terminology and specialized insight required)." : "";
       
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash", 
+        model: "gemini-1.5-flash", 
         contents: [
           {
             role: "user",
@@ -83,7 +83,7 @@ export async function registerRoutes(
       if (isPersian) {
         try {
           const translationResponse = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
+            model: "gemini-1.5-flash",
             contents: [{ role: "user", parts: [{ text: `Translate the following prompt into professional English while maintaining the structured 5-section format:\n\n${generatedText}` }] }]
           });
           englishPrompt = translationResponse.candidates?.[0]?.content?.parts?.[0]?.text || generatedText;
@@ -96,7 +96,7 @@ export async function registerRoutes(
       let jsonPrompt = "{}";
       try {
         const jsonResponse = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-1.5-flash",
           contents: [{ role: "user", parts: [{ text: `Convert the following prompt into a clean JSON object with keys: "role", "context", "task", "constraints", "output_format". Return ONLY the JSON object:\n\n${englishPrompt}` }] }]
         });
         const rawJsonText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
