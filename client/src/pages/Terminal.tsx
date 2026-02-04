@@ -33,20 +33,6 @@ export default function TerminalPage() {
   const generate = useGeneratePrompt();
   const history = usePromptsHistory();
 
-  // Restore the most recent output from history when page loads/refreshes
-  useEffect(() => {
-    if (history.data && history.data.length > 0 && !currentOutput && !generate.isPending) {
-      const mostRecent = history.data[0];
-      setCurrentOutput({
-        original: mostRecent.generatedPrompt,
-        english: mostRecent.englishPrompt || undefined,
-        json: mostRecent.jsonPrompt || undefined
-      });
-      setInputIdea(mostRecent.inputIdea);
-      setSelectedPersona(mostRecent.persona as typeof PERSONAS[number]["id"]);
-    }
-  }, [history.data]);
-
   const handleGenerate = async () => {
     if (!inputIdea.trim()) return;
     
