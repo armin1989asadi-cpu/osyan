@@ -45,8 +45,8 @@ export default function TerminalPage() {
       });
       setCurrentOutput({ 
         original: result.generatedPrompt,
-        english: result.englishPrompt,
-        json: result.jsonPrompt 
+        english: result.englishPrompt || undefined,
+        json: result.jsonPrompt || undefined 
       });
       setActiveTab("original");
     } catch (error) {
@@ -59,8 +59,8 @@ export default function TerminalPage() {
     setSelectedPersona(item.persona as any);
     setCurrentOutput({ 
       original: item.generatedPrompt,
-      english: item.englishPrompt,
-      json: item.jsonPrompt
+      english: item.englishPrompt || undefined,
+      json: item.jsonPrompt || undefined
     });
     setActiveTab("original");
   };
@@ -232,7 +232,8 @@ export default function TerminalPage() {
                 value={inputIdea}
                 onChange={(e) => setInputIdea(e.target.value)}
                 placeholder={t.placeholder}
-                className="min-h-[200px] bg-black/50 border-primary/30 text-primary placeholder:text-primary/20 font-mono text-sm resize-none focus:border-primary focus:ring-1 focus:ring-primary/50"
+                dir={language === "fa" ? "rtl" : "ltr"}
+                className="min-h-[200px] bg-black/50 border-primary/30 text-primary placeholder:text-primary/20 font-mono text-sm resize-none focus:border-primary focus:ring-1 focus:ring-primary/50 text-right ltr:text-left rtl:text-right"
               />
               
               <Button 

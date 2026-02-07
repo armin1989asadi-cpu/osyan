@@ -55,10 +55,10 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
             transition={{ duration: 0.3 }}
             className="border-l-2 border-primary/20 pl-4 py-1"
           >
-            <h3 className="text-primary font-bold mb-2 uppercase text-xs tracking-wider opacity-70">
+            <h3 className="text-primary font-bold mb-2 uppercase text-xs tracking-wider opacity-70 ltr:text-left rtl:text-right">
               {section.title}
             </h3>
-            <div className="whitespace-pre-wrap text-right ltr:text-left rtl:text-right">{section.content}</div>
+            <div className="whitespace-pre-wrap text-right ltr:text-left rtl:text-right" dir="auto">{section.content}</div>
           </motion.div>
         ))}
         {currentIndex < text.length && (
@@ -69,7 +69,7 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
   }
 
   return (
-    <div className="font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap text-foreground/90 text-right ltr:text-left rtl:text-right">
+    <div className="font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap text-foreground/90 text-right ltr:text-left rtl:text-right" dir="auto">
       {displayedText}
       {currentIndex < text.length && (
         <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1 align-middle" />
