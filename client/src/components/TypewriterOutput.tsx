@@ -58,7 +58,7 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
             <h3 className="text-primary font-bold mb-2 uppercase text-xs tracking-wider opacity-70">
               {section.title}
             </h3>
-            <div className="whitespace-pre-wrap">{section.content}</div>
+            <div className="whitespace-pre-wrap text-right ltr:text-left rtl:text-right">{section.content}</div>
           </motion.div>
         ))}
         {currentIndex < text.length && (
@@ -69,7 +69,7 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
   }
 
   return (
-    <div className="font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap text-foreground/90">
+    <div className="font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap text-foreground/90 text-right ltr:text-left rtl:text-right">
       {displayedText}
       {currentIndex < text.length && (
         <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1 align-middle" />
@@ -80,7 +80,10 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
 
 // Simple parser for the standard format
 function parseSections(text: string) {
-  const titles = ["Role", "Context", "Task", "Constraints", "Output Format", "Role:", "Context:", "Task:", "Constraints:", "Output Format:"];
+  const titles = [
+    "Role", "Context", "Task", "Constraints", "Output Format", "Role:", "Context:", "Task:", "Constraints:", "Output Format:",
+    "نقش", "زمینه", "وظیفه", "محدودیت‌ها", "قالب خروجی", "نقش:", "زمینه:", "وظیفه:", "محدودیت‌ها:", "قالب خروجی:"
+  ];
   
   // This is a naive client-side parser just for visual structure
   // It won't be perfect for streaming content but works for completed text

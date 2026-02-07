@@ -107,7 +107,7 @@ export default function TerminalPage() {
   }[language];
 
   return (
-    <div className={cn("min-h-screen bg-background text-foreground font-mono relative overflow-hidden flex flex-col", language === "fa" && "rtl text-right")}>
+    <div className={cn("min-h-screen bg-background text-foreground font-mono relative overflow-hidden flex flex-col", language === "fa" && "rtl")}>
       <MatrixBackground />
       <CRTEffect />
 
