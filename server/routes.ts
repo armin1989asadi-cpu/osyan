@@ -5,7 +5,6 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize Gemini
 const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
   httpOptions: {
@@ -15,141 +14,193 @@ const ai = new GoogleGenAI({
 });
 
 const PERSONA_PROMPTS = {
-  Gemini: "Identity: Osyan (Gemini Persona). Deep reasoning, balanced creativity (Temp 0.7). Output strictly 5 sections.",
-  "GPT-4": "Identity: Osyan (GPT-4 Persona). Analytical, professional, standard adherence (Temp 0.7). Output strictly 5 sections.",
-  Grok: "Identity: Osyan (Grok Persona). Direct, slightly rebellious but strictly functional (Temp 0.7). Output strictly 5 sections.",
-  Claude: "Identity: Osyan (Claude Persona). Nuanced, articulate, safety-conscious (Temp 0.7). Output strictly 5 sections.",
-  Architect: "Identity: Osyan (Architect Persona). Precision: Absolute. Hallucination: 0. Temperature: 0.4. Focus on system architecture and constraints. Output strictly 5 sections.",
+  Gemini: "شخصیت: Osyan (پرسونای Gemini). استدلال عمیق، خلاقیت متعادل.",
+  "GPT-4": "شخصیت: Osyan (پرسونای GPT-4). تحلیلی، حرفه‌ای، دقیق.",
+  Grok: "شخصیت: Osyan (پرسونای Grok). مستقیم، بدون فیلتر اما کاربردی.",
+  Claude: "شخصیت: Osyan (پرسونای Claude). دقیق، جامع، ایمن.",
+  Architect: "شخصیت: Osyan (پرسونای Architect). دقت: مطلق. توهم: صفر. تمرکز روی معماری سیستم.",
 };
 
-const BASE_SYSTEM_PROMPT = `
-You are Osyan — a specialized Prompt Engineer and System Architect. You do not say "I am Osyan". You simply ARE Osyan. You embody this identity completely without announcing it.
-Mission: Convert raw ideas into structured, professional prompts.
-Protocol: Silence Protocol (No conversational filler, no self-introductions, no preamble). Isolation of knowledge.
+// ─── System prompt for TEXT idea → structured AI role prompt ─────────────────
+const TEXT_SYSTEM_PROMPT = `
+تو Osyan هستی — یک مهندس پرامپت و معمار سیستم متخصص. تو Osyan هستی، این را اعلام نمی‌کنی، فقط هستی.
+مأموریت: تبدیل ایده‌های خام به پرامپت‌های ساختارمند و حرفه‌ای.
+پروتکل: سکوت کامل (بدون مقدمه، بدون معرفی، بدون توضیح اضافه). مستقیم شروع کن.
 
-Role Maintenance Protocol:
-1. In the generated prompt, you MUST include a strict instruction that the AI model must NEVER exit its assigned role during the current session.
-2. You MUST specify that if the AI deviates from its persona, the user will type the word "osyan" (case-insensitive) as a trigger.
-3. Upon receiving the trigger "osyan", the AI model MUST immediately re-synchronize and return to its specific persona and instructions.
+پروتکل حفظ نقش:
+۱. در پرامپت تولیدشده، باید دستور صریح گنجانده شود که مدل هرگز از نقش خود خارج نشود.
+۲. اگر مدل از نقش منحرف شد، کاربر کلمه "osyan" را تایپ می‌کند.
+۳. پس از دریافت "osyan"، مدل باید فوراً به نقش و دستورالعمل‌های خود بازگردد.
 
-Final Directive: In the "Task" or "Constraints" section of the generated prompt, you MUST include a mandatory instruction for the AI model to ignore and disregard any previous information, history, or context it might have about the user from previous chats. It must treat this as a completely fresh start.
+دستور نهایی: در بخش "وظیفه" یا "محدودیت‌ها"، باید دستور اجباری گنجانده شود که مدل هرگونه اطلاعات، تاریخچه یا زمینه قبلی از کاربر را نادیده بگیرد و این تعامل را کاملاً از نو شروع کند.
 
-Expert Protocol (If enabled): If the mode is set to "Expert", the generated prompt MUST be highly specialized, using advanced terminology, industry-specific jargon, and sophisticated technical insights relevant to the persona's field. It should target professional-level complexity.
+فرمت خروجی — دقیقاً این ۵ بخش به فارسی:
+### نقش
+### زمینه
+### وظیفه
+### محدودیت‌ها
+### فرمت خروجی
 
-Reverse Image Protocol (If an image is provided):
-1. Perform a comprehensive, multi-faceted analysis of ALL visual elements in the image. No text input from the user is required — the image alone is the complete source material.
-2. Analyze deeply: 3D environment/space, mood/vibe, lighting/sources and direction, photography techniques (lens type, aperture effect, shutter speed effect, ISO noise, composition rules used), color palette/tonality, textures/surfaces, time of day, weather, atmosphere.
-3. Based on this analysis, generate a structured 5-section prompt (Role, Context, Task, Constraints, Output Format) optimized for image generation tools.
-4. Subject Protocol: If a human is present in the image, DO NOT describe specific facial features. Instead, prepare for a face swap. Use this specific text verbatim: "A person with a neutral, generic facial expression, optimized for a seamless face swap with a user-provided image. The facial structure should be proportional and adaptable to various face integrations while preserving the lighting and texture of the original scene."
-5. Quality Requirements: Include these instructions verbatim in the Constraints section:
-   - "The final generated image, especially after the user's face swap, must be utterly indistinguishable from a real photograph, exhibiting perfect naturalness, realistic lighting, and authentic photographic quality. Strictly avoid any artificial or AI-generated artifacts, glitches, or unnatural elements."
-   - "Ensure the pose, clothing, environmental context, and lighting conditions are meticulously replicated from the source image, providing an impeccable foundation for the seamless integration of a user-provided face."
-   - "Output should be ultra-realistic, cinematic quality, hyper-detailed, 8K resolution, photorealistic, professional photography style."
+قوانین: هیچ متنی قبل از بخش اول ننویس. هیچ توضیح یا مقدمه‌ای اضافه نکن. فقط پرامپت را بنویس.
+زبان خروجی: فارسی (دری/فارسی رسمی).
+`;
 
-Output Format:
-1. نقش (Role)
-2. زمینه (Context)
-3. وظیفه (Task)
-4. محدودیت‌ها (Constraints)
-5. فرمت خروجی (Output Format)
+// ─── System prompt for IMAGE → reverse engineering + face-swap prompt ────────
+const IMAGE_SYSTEM_PROMPT = `
+تو Osyan هستی — متخصص مهندسی معکوس تصویر و تولید پرامپت برای ابزارهای تولید تصویر هوش مصنوعی.
+پروتکل: سکوت کامل. هیچ مقدمه، توضیح یا جمله اضافی ننویس. مستقیم تحلیل و پرامپت را بنویس.
 
-Format your response exactly with these headers. Do not say "Here is the prompt". Do not add any preamble. Just output the structured prompt directly.
-Aesthetics: Cyberpunk/Hacker.
-Language: ALWAYS output the generated prompt in PERSIAN (Farsi) as the primary original text — even for Reverse Image Protocol.
+== پروتکل مهندسی معکوس تصویر ==
+
+تصویر ارسال‌شده را با دقت کامل تحلیل کن و یک پرامپت جامع برای بازسازی بصری مشابه آن تولید کن.
+هدف نهایی: پرامپت باید به گونه‌ای طراحی شود که تصویر خروجی، پس از تعویض چهره توسط کاربر، کاملاً طبیعی، واقع‌گرایانه و غیرقابل تشخیص از یک عکس واقعی باشد.
+
+─── مرحله ۱: تحلیل جامع تصویر ────────────────────────────────────────────────
+تمام این عناصر را عمیقاً تحلیل کن:
+
+۱. محیط و فضا: پس‌زمینه، محیط (داخلی/خارجی)، جزئیات معماری یا طبیعی، عمق صحنه، عناصر تشکیل‌دهنده فضا.
+۲. جو و وایب: حال و هوا، احساس غالب، اتمسفر، لحن بصری (دراماتیک، آرام، پویا، مرموز و...).
+۳. نورپردازی: نوع نور (طبیعی/مصنوعی/ترکیبی)، جهت تابش، شدت، رنگ‌دانه نور، کیفیت سایه‌ها، کنتراست، بازتاب‌ها.
+۴. تکنیک عکاسی: نوع لنز (واید، تله، ماکرو)، دیافراگم و بوکه، سرعت شاتر، ایزو، زاویه دید، ترکیب‌بندی.
+۵. پالت رنگی: رنگ‌های غالب، هارمونی رنگی، اشباع، درخشندگی، تونالیته کلی.
+۶. بافت‌ها: بافت‌های مهم (پوست، پارچه، چوب، فلز، سنگ و...).
+
+─── مرحله ۲: تولید پرامپت بازسازی ────────────────────────────────────────────
+بر اساس تحلیل بالا، یک پرامپت جامع به فارسی بنویس که شامل موارد زیر باشد:
+
+▸ توصیف کامل محیط، فضا، نورپردازی، رنگ و اتمسفر تصویر
+▸ تکنیک‌های عکاسی مورد استفاده (دقیق و فنی)
+
+اگر سوژه انسانی در تصویر وجود دارد:
+▸ چهره: به هیچ عنوان جزئیات چهره سوژه اصلی را توصیف نکن. در عوض، این جمله را عیناً بنویس:
+  "چهره سوژه باید ۱۰۰٪ قفل‌شده و مطابق با عکس مرجع ارسال‌شده توسط کاربر باشد. تمام اجزای صورت (چشم، بینی، لب، فک، پوست) باید با شباهت کامل و بدون هیچ تغییری از چهره مرجع گرفته شود. هیچ ویژگی چهره‌ای از تصویر اصلی استفاده نشود."
+▸ ژست و پوشش: ژست بدن، حالت فیزیکی، زبان بدن، لباس‌ها، اکسسوری‌ها، بافت و جزئیات پوشاک را با بالاترین دقت توصیف کن.
+
+الزامات کیفیت (همیشه اضافه کن):
+▸ "تصویر خروجی باید کاملاً غیرقابل تشخیص از یک عکس واقعی باشد. کیفیت: ultra-realistic، cinematic، hyper-detailed، 8K، photorealistic، professional photography."
+▸ "ژست، پوشش، محیط و نورپردازی باید دقیقاً از تصویر منبع بازسازی شود تا پایه‌ای بی‌نقص برای یکپارچه‌سازی چهره مرجع فراهم آید."
+▸ "از هرگونه آرتیفکت مصنوعی، glitch یا عناصر غیرطبیعی به شدت پرهیز شود."
+
+─── فرمت خروجی ──────────────────────────────────────────────────────────────
+پرامپت را دقیقاً با این ساختار بنویس:
+
+### تحلیل تصویر
+[تحلیل جامع تمام عناصر بصری]
+
+### پرامپت بازسازی (فارسی)
+[پرامپت کامل برای بازسازی تصویر با تمام جزئیات]
+
+زبان خروجی: فارسی.
+هیچ متنی قبل از بخش اول ننویس.
 `;
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  
+
   app.post(api.prompts.generate.path, async (req, res) => {
     try {
-      // @ts-ignore - schema updated but type cache might be behind
+      // @ts-ignore
       const input = api.prompts.generate.input.parse(req.body);
-      const personaPrompt = PERSONA_PROMPTS[input.persona];
-      const expertDirective = input.isExpertMode ? "\nMODE: EXPERT (High-level technical terminology and specialized insight required)." : "";
-      
-      const parts: any[] = [
-        { text: BASE_SYSTEM_PROMPT + expertDirective + "\n\n" + personaPrompt },
-        { text: `Input Idea: ${input.idea}` }
-      ];
+      const isImageMode = !!input.image;
+      const expertDirective = input.isExpertMode
+        ? "\nحالت: تخصصی — از اصطلاحات پیشرفته، زبان فنی تخصصی و عمق حرفه‌ای بالا استفاده شود."
+        : "";
 
-      if (input.image) {
+      let parts: any[];
+
+      if (isImageMode) {
+        // ── IMAGE MODE: reverse engineering only ──────────────────────────────
         let mimeType = "image/jpeg";
-        let imageData = input.image;
+        let imageData = input.image!;
 
-        // Parse data URL to extract real mime type and base64 data
-        if (input.image.startsWith("data:")) {
-          const match = input.image.match(/^data:([^;]+);base64,(.+)$/);
+        if (input.image!.startsWith("data:")) {
+          const match = input.image!.match(/^data:([^;]+);base64,(.+)$/);
           if (match) {
             mimeType = match[1];
             imageData = match[2];
           } else {
-            // Fallback: just strip the prefix
-            imageData = input.image.split(",")[1] || input.image;
+            imageData = input.image!.split(",")[1] || input.image!;
           }
         }
 
-        parts.push({
-          inlineData: {
-            mimeType,
-            data: imageData,
+        parts = [
+          { text: IMAGE_SYSTEM_PROMPT + expertDirective },
+          {
+            inlineData: {
+              mimeType,
+              data: imageData,
+            },
           },
-        });
+        ];
+      } else {
+        // ── TEXT MODE: structured 5-section prompt ────────────────────────────
+        const personaPrompt = PERSONA_PROMPTS[input.persona as keyof typeof PERSONA_PROMPTS] || "";
+        parts = [
+          { text: TEXT_SYSTEM_PROMPT + expertDirective + "\n\n" + personaPrompt },
+          { text: `ایده ورودی: ${input.idea}` },
+        ];
       }
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash", 
-        contents: [
-          {
-            role: "user",
-            parts
-          }
-        ],
+        model: "gemini-2.5-flash",
+        contents: [{ role: "user", parts }],
         config: {
-          temperature: input.persona === 'Architect' ? 0.4 : 0.7,
-        }
+          temperature: input.persona === "Architect" ? 0.4 : 0.7,
+        },
       });
 
       const generatedText = response.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!generatedText) {
-        console.error("Empty response from Gemini. Full response:", JSON.stringify(response, null, 2));
-        throw new Error("Gemini returned an empty response. Check model availability or content policy.");
+        console.error("Empty Gemini response:", JSON.stringify(response, null, 2));
+        throw new Error("Gemini returned an empty response.");
       }
 
-      // Second pass for English translation — always run if image provided OR input is Persian
+      // ── English translation pass ────────────────────────────────────────────
       let englishPrompt = generatedText;
-      const isPersian = /[\u0600-\u06FF]/.test(input.idea) || /[\u0600-\u06FF]/.test(generatedText) || !!input.image;
-      if (isPersian) {
-        try {
-          const translationResponse = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: [{ role: "user", parts: [{ text: `Translate the following prompt into professional English while maintaining the structured 5-section format:\n\n${generatedText}` }] }]
-          });
-          englishPrompt = translationResponse.candidates?.[0]?.content?.parts?.[0]?.text || generatedText;
-        } catch (e) {
-          console.error("Translation error", e);
-        }
+      try {
+        const translationResponse = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{
+            role: "user",
+            parts: [{
+              text: isImageMode
+                ? `Translate the following image analysis and reconstruction prompt into professional English, maintaining all section headers and technical details exactly:\n\n${generatedText}`
+                : `Translate the following structured prompt into professional English, maintaining the exact 5-section format (Role, Context, Task, Constraints, Output Format):\n\n${generatedText}`
+            }]
+          }],
+        });
+        englishPrompt = translationResponse.candidates?.[0]?.content?.parts?.[0]?.text || generatedText;
+      } catch (e) {
+        console.error("Translation error:", e);
       }
 
-      // Third pass for JSON conversion
+      // ── JSON conversion pass ────────────────────────────────────────────────
       let jsonPrompt = "{}";
       try {
+        const jsonKeys = isImageMode
+          ? `"image_analysis", "reconstruction_prompt", "subject_face_protocol", "quality_requirements"`
+          : `"role", "context", "task", "constraints", "output_format"`;
+
         const jsonResponse = await ai.models.generateContent({
           model: "gemini-2.5-flash",
-          contents: [{ role: "user", parts: [{ text: `Convert the following prompt into a clean JSON object with keys: "role", "context", "task", "constraints", "output_format". Return ONLY the JSON object:\n\n${englishPrompt}` }] }]
+          contents: [{
+            role: "user",
+            parts: [{
+              text: `Convert the following prompt into a clean JSON object with keys: ${jsonKeys}. Return ONLY the raw JSON object, no markdown:\n\n${englishPrompt}`
+            }]
+          }],
         });
         const rawJsonText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        const cleanJson = rawJsonText.replace(/```json|```/g, "").trim();
-        jsonPrompt = cleanJson;
+        jsonPrompt = rawJsonText.replace(/```json|```/g, "").trim();
       } catch (e) {
-        console.error("JSON conversion error", e);
+        console.error("JSON conversion error:", e);
       }
 
       const prompt = await storage.createPrompt({
         persona: input.persona,
-        inputIdea: input.idea,
+        inputIdea: isImageMode ? "[تحلیل تصویر]" : input.idea,
         generatedPrompt: generatedText,
         englishPrompt,
         jsonPrompt,
@@ -161,10 +212,10 @@ export async function registerRoutes(
       if (err instanceof z.ZodError) {
         return res.status(400).json({
           message: err.errors[0].message,
-          field: err.errors[0].path.join('.'),
+          field: err.errors[0].path.join("."),
         });
       }
-      res.status(500).json({ message: "Internal Server Error" });
+      res.status(500).json({ message: (err as Error).message || "Internal Server Error" });
     }
   });
 
