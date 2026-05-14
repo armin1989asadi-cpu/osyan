@@ -76,11 +76,26 @@ export async function registerRoutes(
       ];
 
       if (input.image) {
+        let mimeType = "image/jpeg";
+        let imageData = input.image;
+
+        // Parse data URL to extract real mime type and base64 data
+        if (input.image.startsWith("data:")) {
+          const match = input.image.match(/^data:([^;]+);base64,(.+)$/);
+          if (match) {
+            mimeType = match[1];
+            imageData = match[2];
+          } else {
+            // Fallback: just strip the prefix
+            imageData = input.image.split(",")[1] || input.image;
+          }
+        }
+
         parts.push({
           inlineData: {
-            mimeType: "image/jpeg",
-            data: input.image
-          }
+            mimeType,
+            data: imageData,
+          },
         });
       }
 
@@ -97,7 +112,11 @@ export async function registerRoutes(
         }
       });
 
-      const generatedText = response.candidates?.[0]?.content?.parts?.[0]?.text || "Generation failed.";
+      const generatedText = response.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!generatedText) {
+        console.error("Empty response from Gemini. Full response:", JSON.stringify(response, null, 2));
+        throw new Error("Gemini returned an empty response. Check model availability or content policy.");
+      }
 
       // Second pass for English translation — always run if image provided OR input is Persian
       let englishPrompt = generatedText;
