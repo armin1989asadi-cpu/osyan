@@ -23,6 +23,7 @@ export const api = {
         persona: z.enum(['Gemini', 'GPT-4', 'Grok', 'Claude', 'Architect']),
         idea: z.string().min(1, "Input idea is required"),
         isExpertMode: z.boolean().optional(),
+        image: z.string().optional(),
       }),
       responses: {
         200: z.custom<typeof prompts.$inferSelect>(),

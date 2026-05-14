@@ -9,6 +9,7 @@ export const prompts = pgTable("prompts", {
   generatedPrompt: text("generated_prompt").notNull(),
   englishPrompt: text("english_prompt"),
   jsonPrompt: text("json_prompt"),
+  imageAnalysis: text("image_analysis"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -17,6 +18,7 @@ export const insertPromptSchema = createInsertSchema(prompts).omit({
   createdAt: true 
 }).extend({
   isExpertMode: z.boolean().optional(),
+  image: z.string().optional(),
 });
 
 export type Prompt = typeof prompts.$inferSelect;

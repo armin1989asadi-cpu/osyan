@@ -55,10 +55,10 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
             transition={{ duration: 0.3 }}
             className="border-l-2 border-primary/20 pl-4 py-1"
           >
-            <h3 className="text-primary font-bold mb-2 uppercase text-xs tracking-wider opacity-70 ltr:text-left rtl:text-right">
+            <h3 className="text-primary font-bold mb-2 uppercase text-xs tracking-wider opacity-70">
               {section.title}
             </h3>
-            <div className="whitespace-pre-wrap text-right ltr:text-left rtl:text-right" dir="auto">{section.content}</div>
+            <div className="whitespace-pre-wrap">{section.content}</div>
           </motion.div>
         ))}
         {currentIndex < text.length && (
@@ -69,7 +69,7 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
   }
 
   return (
-    <div className="font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap text-foreground/90 text-right ltr:text-left rtl:text-right" dir="auto">
+    <div className="font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap text-foreground/90">
       {displayedText}
       {currentIndex < text.length && (
         <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1 align-middle" />
@@ -80,10 +80,7 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
 
 // Simple parser for the standard format
 function parseSections(text: string) {
-  const titles = [
-    "Role", "Context", "Task", "Constraints", "Output Format", "Role:", "Context:", "Task:", "Constraints:", "Output Format:",
-    "نقش", "زمینه", "وظیفه", "محدودیت‌ها", "قالب خروجی", "نقش:", "زمینه:", "وظیفه:", "محدودیت‌ها:", "قالب خروجی:"
-  ];
+  const titles = ["Role", "Context", "Task", "Constraints", "Output Format", "Role:", "Context:", "Task:", "Constraints:", "Output Format:"];
   
   // This is a naive client-side parser just for visual structure
   // It won't be perfect for streaming content but works for completed text
