@@ -44,16 +44,20 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
   // Parse text into sections if possible
   const sections = parseSections(displayedText);
 
+  const hasPersian = /[\u0600-\u06FF]/.test(displayedText);
+  const textDir = hasPersian ? "rtl" : "ltr";
+  const textAlign = hasPersian ? "text-right" : "text-left";
+
   if (sections.length > 0) {
     return (
-      <div className="space-y-6 font-mono text-sm md:text-base leading-relaxed text-foreground/90">
+      <div dir={textDir} className={`space-y-6 font-mono text-sm md:text-base leading-relaxed text-foreground/90 ${textAlign}`}>
         {sections.map((section, idx) => (
           <motion.div 
             key={idx}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="border-l-2 border-primary/20 pl-4 py-1"
+            className={hasPersian ? "border-r-2 border-l-0 border-primary/20 pr-4 pl-0 py-1" : "border-l-2 border-primary/20 pl-4 py-1"}
           >
             <h3 className="text-primary font-bold mb-2 uppercase text-xs tracking-wider opacity-70">
               {section.title}
@@ -69,7 +73,7 @@ export function TypewriterOutput({ text, isStreaming }: TypewriterOutputProps) {
   }
 
   return (
-    <div className="font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap text-foreground/90">
+    <div dir={textDir} className={`font-mono text-sm md:text-base leading-relaxed whitespace-pre-wrap text-foreground/90 ${textAlign}`}>
       {displayedText}
       {currentIndex < text.length && (
         <span className="inline-block w-2 h-4 bg-primary animate-pulse ml-1 align-middle" />

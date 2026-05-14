@@ -12,51 +12,60 @@ export function MatrixBackground() {
 
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
-    
-    // Katakana characters + latin + nums
-    const chars = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    const chars = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*<>[]{}|/\\";
     const charArray = chars.split("");
-    
-    const fontSize = 14;
-    const columns = width / fontSize;
-    
-    // Array of drops - one per column
+
+    const fontSize = 13;
+    const columns = Math.floor(width / fontSize);
+
     const drops: number[] = [];
+    const speeds: number[] = [];
     for (let i = 0; i < columns; i++) {
-      drops[i] = 1;
+      drops[i] = Math.random() * -height / fontSize;
+      speeds[i] = 0.5 + Math.random() * 1.5;
     }
 
     const draw = () => {
-      // Translucent black background to show trail
-      ctx.fillStyle = "rgba(12, 12, 12, 0.05)";
+      ctx.fillStyle = "rgba(12, 12, 12, 0.04)";
       ctx.fillRect(0, 0, width, height);
-      
-      ctx.fillStyle = "#0F0"; // Green text
-      ctx.font = `${fontSize}px monospace`;
-      
+
       for (let i = 0; i < drops.length; i++) {
         const text = charArray[Math.floor(Math.random() * charArray.length)];
-        
-        // Randomly color some characters brighter (white/neon)
-        if (Math.random() > 0.95) {
-            ctx.fillStyle = "#FFF"; 
+        const y = drops[i] * fontSize;
+
+        const rand = Math.random();
+        if (rand > 0.98) {
+          ctx.fillStyle = "#FFFFFF";
+          ctx.shadowColor = "#39ff14";
+          ctx.shadowBlur = 8;
+        } else if (rand > 0.88) {
+          ctx.fillStyle = "#39ff14";
+          ctx.shadowColor = "#39ff14";
+          ctx.shadowBlur = 6;
+        } else if (rand > 0.6) {
+          ctx.fillStyle = "#00c800";
+          ctx.shadowBlur = 0;
         } else {
-            ctx.fillStyle = "#0F380F"; // Dimmer green for most
-            if (Math.random() > 0.9) ctx.fillStyle = "#39ff14"; // Bright neon for some
+          ctx.fillStyle = "#1a6e1a";
+          ctx.shadowBlur = 0;
         }
 
-        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-        
-        // Reset drop to top randomly after it has crossed screen
-        if (drops[i] * fontSize > height && Math.random() > 0.975) {
+        ctx.font = `bold ${fontSize}px monospace`;
+        ctx.fillText(text, i * fontSize, y);
+
+        ctx.shadowBlur = 0;
+
+        if (y > height && Math.random() > 0.97) {
           drops[i] = 0;
+          speeds[i] = 0.5 + Math.random() * 1.5;
         }
-        
-        drops[i]++;
+
+        drops[i] += speeds[i];
       }
     };
 
-    const interval = setInterval(draw, 33);
+    const interval = setInterval(draw, 25);
 
     const handleResize = () => {
       width = canvas.width = window.innerWidth;
@@ -72,9 +81,9 @@ export function MatrixBackground() {
   }, []);
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      className="fixed inset-0 z-0 opacity-20 pointer-events-none"
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 z-0 opacity-35 pointer-events-none"
     />
   );
 }
