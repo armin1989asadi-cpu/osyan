@@ -39,62 +39,62 @@
 
 /* ── Glassmorphism utilities ── */
 .glass {
-  background: rgba(12, 20, 12, 0.55);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border: 1px solid rgba(57, 255, 20, 0.13);
+  background: rgba(8, 14, 8, 0.22);
+  backdrop-filter: blur(18px) saturate(1.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  border: 1px solid rgba(57, 255, 20, 0.11);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(57, 255, 20, 0.08);
+    0 4px 24px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(57, 255, 20, 0.06);
 }
 
 .glass-strong {
-  background: rgba(10, 18, 10, 0.72);
-  backdrop-filter: blur(32px) saturate(1.6);
-  -webkit-backdrop-filter: blur(32px) saturate(1.6);
-  border: 1px solid rgba(57, 255, 20, 0.18);
+  background: rgba(8, 14, 8, 0.38);
+  backdrop-filter: blur(28px) saturate(1.7);
+  -webkit-backdrop-filter: blur(28px) saturate(1.7);
+  border: 1px solid rgba(57, 255, 20, 0.14);
   box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.6),
-    0 0 0 0.5px rgba(57, 255, 20, 0.06),
-    inset 0 1px 0 rgba(57, 255, 20, 0.12);
+    0 8px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(57, 255, 20, 0.09);
 }
 
 .glass-header {
-  background: rgba(8, 14, 8, 0.78);
-  backdrop-filter: blur(40px) saturate(1.8);
-  -webkit-backdrop-filter: blur(40px) saturate(1.8);
-  border-bottom: 1px solid rgba(57, 255, 20, 0.12);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  background: rgba(5, 10, 5, 0.52);
+  backdrop-filter: blur(36px) saturate(1.8);
+  -webkit-backdrop-filter: blur(36px) saturate(1.8);
+  border-bottom: 1px solid rgba(57, 255, 20, 0.09);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
 }
 
 .glass-card {
-  background: rgba(15, 24, 15, 0.5);
-  backdrop-filter: blur(24px) saturate(1.5);
-  -webkit-backdrop-filter: blur(24px) saturate(1.5);
-  border: 1px solid rgba(57, 255, 20, 0.1);
+  background: rgba(10, 18, 10, 0.2);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  border: 1px solid rgba(57, 255, 20, 0.08);
   box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(57, 255, 20, 0.07);
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    0 2px 16px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(57, 255, 20, 0.05);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
 }
 
 .glass-card:hover {
-  border-color: rgba(57, 255, 20, 0.28);
+  background: rgba(12, 22, 12, 0.3);
+  border-color: rgba(57, 255, 20, 0.22);
   box-shadow:
-    0 8px 40px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(57, 255, 20, 0.07),
-    inset 0 1px 0 rgba(57, 255, 20, 0.12);
+    0 6px 32px rgba(0, 0, 0, 0.4),
+    0 0 16px rgba(57, 255, 20, 0.06),
+    inset 0 1px 0 rgba(57, 255, 20, 0.1);
 }
 
 .glass-glow {
-  background: rgba(12, 20, 12, 0.55);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border: 1px solid rgba(57, 255, 20, 0.35);
+  background: rgba(8, 16, 8, 0.28);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border: 1px solid rgba(57, 255, 20, 0.28);
   box-shadow:
-    0 0 30px rgba(57, 255, 20, 0.12),
-    0 8px 32px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(57, 255, 20, 0.15);
+    0 0 24px rgba(57, 255, 20, 0.09),
+    0 6px 28px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(57, 255, 20, 0.12);
 }
 
 /* ── Neon glow on text ── */

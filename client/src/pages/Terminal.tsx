@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useGeneratePrompt, usePromptsHistory } from "@/hooks/use-prompts";
 import { MatrixBackground } from "@/components/MatrixBackground";
 import { CRTEffect } from "@/components/CRTEffect";
@@ -9,24 +9,27 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { History, Terminal as TerminalIcon, Cpu, ShieldAlert, Sparkles, BrainCircuit, ImageIcon } from "lucide-react";
+import { History, Terminal as TerminalIcon, Cpu, ShieldAlert, Sparkles, BrainCircuit, ImageIcon, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 
 const PERSONAS = [
-  { id: "Gemini", icon: Sparkles, desc: "Creative engine" },
-  { id: "GPT-4", icon: BrainCircuit, desc: "Analytical" },
-  { id: "Grok", icon: ShieldAlert, desc: "Unfiltered" },
-  { id: "Claude", icon: Cpu, desc: "Articulate" },
-  { id: "Architect", icon: TerminalIcon, desc: "System design" },
+  { id: "Gemini", icon: Sparkles },
+  { id: "GPT-4", icon: BrainCircuit },
+  { id: "Grok", icon: ShieldAlert },
+  { id: "Claude", icon: Cpu },
+  { id: "Architect", icon: TerminalIcon },
 ] as const;
+
+const hasPersianChars = (text: string) => /[\u0600-\u06FF]/.test(text);
 
 export default function TerminalPage() {
   const [selectedPersona, setSelectedPersona] = useState<typeof PERSONAS[number]["id"]>("Gemini");
   const [inputIdea, setInputIdea] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
+  const [imageExpanded, setImageExpanded] = useState(false);
   const [isExpertMode, setIsExpertMode] = useState(false);
   const [language, setLanguage] = useState<"en" | "fa">("en");
   const [currentOutput, setCurrentOutput] = useState<{ original: string; english?: string; json?: string } | null>(null);
@@ -34,6 +37,9 @@ export default function TerminalPage() {
 
   const generate = useGeneratePrompt();
   const history = usePromptsHistory();
+
+  // Detect if textarea content is Persian for RTL
+  const inputIsPersian = hasPersianChars(inputIdea);
 
   const handleGenerate = async () => {
     if (!inputIdea.trim() && !selectedImage) return;
@@ -65,94 +71,77 @@ export default function TerminalPage() {
 
   const t = {
     en: {
-      status: "SYSTEM ONLINE", latency: "12ms", logs: "LOGS", opLogs: "OPERATION LOGS",
-      neuralConfig: "NEURAL CONFIG", expertMode: "EXPERT PROTOCOL", reverseImage: "REVERSE IMAGE",
-      analyzeImage: "ANALYZE IMAGE", uploading: "UPLOADING...", inputVector: "Input Vector",
-      chars: "CHARS", placeholder: "Enter raw directive...", execute: "EXECUTE",
-      processing: "PROCESSING...", outputStream: "OUTPUT STREAM", original: "ORIGINAL",
-      english: "ENGLISH", json: "JSON", awaiting: "AWAITING INPUT", copy: "COPY",
+      status: "ONLINE", logs: "LOGS", opLogs: "OPERATION LOGS",
+      neuralConfig: "NEURAL CONFIG", expertMode: "EXPERT", reverseImage: "REVERSE IMAGE",
+      analyzeImage: "ANALYZE", uploading: "UPLOADING...", inputVector: "Directive",
+      chars: "ch", placeholder: "Enter raw directive...", execute: "EXECUTE",
+      processing: "PROCESSING...", outputStream: "OUTPUT STREAM", original: "FA",
+      english: "EN", json: "JSON", awaiting: "AWAITING INPUT", copy: "COPY",
     },
     fa: {
-      status: "سیستم فعال", latency: "۱۲ms", logs: "لاگ‌ها", opLogs: "گزارش عملیات",
-      neuralConfig: "تنظیمات", expertMode: "پروتکل تخصصی", reverseImage: "مهندسی معکوس",
-      analyzeImage: "تحلیل تصویر", uploading: "در حال دریافت...", inputVector: "ایده ورودی",
-      chars: "کاراکتر", placeholder: "دستور خام را وارد کنید...", execute: "اجرا",
-      processing: "در حال پردازش...", outputStream: "خروجی سیستم", original: "فارسی",
-      english: "انگلیسی", json: "JSON", awaiting: "در انتظار ورودی", copy: "کپی",
+      status: "آنلاین", logs: "لاگ", opLogs: "گزارش عملیات",
+      neuralConfig: "پیکربندی", expertMode: "تخصصی", reverseImage: "مهندسی معکوس",
+      analyzeImage: "تحلیل", uploading: "دریافت...", inputVector: "دستور",
+      chars: "ک", placeholder: "دستور خام را وارد کنید...", execute: "اجرا",
+      processing: "پردازش...", outputStream: "خروجی", original: "FA",
+      english: "EN", json: "JSON", awaiting: "در انتظار", copy: "کپی",
     },
   }[language];
 
   return (
-    <div className={cn("min-h-screen bg-background text-foreground font-mono relative overflow-hidden flex flex-col", language === "fa" && "rtl text-right")}>
+    <div className={cn(
+      "min-h-screen bg-background text-foreground font-mono relative overflow-hidden flex flex-col",
+      language === "fa" && "rtl"
+    )}>
       <MatrixBackground />
       <CRTEffect />
 
       {/* ── Header ── */}
-      <header className="relative z-20 glass-header px-5 py-3 flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <div className="scale-75 origin-left">
+      <header className="relative z-20 glass-header px-4 py-2.5 flex justify-between items-center shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="scale-[0.65] origin-left -my-1">
             <GlitchLogo />
           </div>
-          <div className="hidden md:flex items-center gap-2 text-[11px] text-primary/50 border-l border-primary/10 pl-4">
-            <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#4ade80] animate-pulse" />
+          <div className="hidden md:flex items-center gap-1.5 text-[10px] text-primary/40 pl-3 border-l border-primary/8">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 shadow-[0_0_5px_#4ade80] animate-pulse" />
             {t.status}
-            <span className="opacity-30 mx-1">|</span>
-            {t.latency}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Language toggle */}
-          <div className="flex glass rounded-xl p-0.5 gap-0.5">
+          <div className="flex glass rounded-lg p-0.5 gap-px">
             {(["en", "fa"] as const).map((lang) => (
-              <button
-                key={lang}
-                onClick={() => setLanguage(lang)}
+              <button key={lang} onClick={() => setLanguage(lang)}
                 className={cn(
-                  "px-3 py-1.5 text-[10px] rounded-[10px] font-bold tracking-wider transition-all duration-200",
-                  language === lang
-                    ? "bg-primary text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]"
-                    : "text-primary/50 hover:text-primary"
+                  "px-2.5 py-1 text-[10px] rounded-md font-bold tracking-wider transition-all duration-150",
+                  language === lang ? "bg-primary text-black shadow-[0_0_8px_rgba(57,255,20,0.35)]" : "text-primary/45 hover:text-primary/80"
                 )}
-              >
-                {lang.toUpperCase()}
-              </button>
+              >{lang.toUpperCase()}</button>
             ))}
           </div>
 
-          {/* History sheet */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" className="glass border-primary/20 text-primary/70 hover:text-primary hover:border-primary/50 hover:bg-primary/5 rounded-xl gap-2 text-[11px]">
-                <History className="w-3.5 h-3.5" />
-                {t.logs}
-              </Button>
+              <button className="glass border border-primary/15 text-primary/55 hover:text-primary hover:border-primary/40 rounded-lg px-3 py-1.5 text-[10px] font-bold tracking-wider flex items-center gap-1.5 transition-all duration-150">
+                <History className="w-3 h-3" />{t.logs}
+              </button>
             </SheetTrigger>
-            <SheetContent side={language === "fa" ? "left" : "right"} className="glass-strong border-primary/15 w-[380px] rounded-l-2xl">
-              <SheetHeader className="border-b border-primary/10 pb-4">
-                <SheetTitle className="font-display text-primary/80 tracking-widest text-sm">
-                  {t.opLogs}
-                </SheetTitle>
+            <SheetContent side={language === "fa" ? "left" : "right"} className="glass-strong border-primary/12 w-[340px]">
+              <SheetHeader className="border-b border-primary/8 pb-3">
+                <SheetTitle className="font-display text-primary/70 tracking-widest text-xs">{t.opLogs}</SheetTitle>
               </SheetHeader>
-              <ScrollArea className="h-[calc(100vh-100px)] mt-4">
-                <div className="space-y-3 pr-2">
+              <ScrollArea className="h-[calc(100vh-90px)] mt-3">
+                <div className="space-y-2 pr-1">
                   {history.data?.map((item) => (
-                    <div
-                      key={item.id}
-                      onClick={() => loadHistoryItem(item)}
-                      className="glass-card rounded-xl p-3 cursor-pointer group text-left ltr:text-left rtl:text-right"
-                    >
-                      <div className="flex justify-between items-start mb-1.5">
-                        <span className="text-[10px] font-bold text-primary/70 group-hover:text-primary uppercase tracking-wider">
-                          [{item.persona}]
-                        </span>
-                        <span className="text-[9px] text-primary/30">
+                    <div key={item.id} onClick={() => loadHistoryItem(item)}
+                      className="glass-card rounded-xl p-3 cursor-pointer group ltr:text-left rtl:text-right">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-[9px] font-bold text-primary/60 group-hover:text-primary/90 uppercase tracking-wider">[{item.persona}]</span>
+                        <span className="text-[9px] text-primary/25">
                           {item.createdAt && formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="text-[11px] text-primary/40 line-clamp-2 font-mono leading-relaxed">
-                        {item.inputIdea}
-                      </p>
+                      <p className="text-[10px] text-primary/35 line-clamp-2 leading-relaxed">{item.inputIdea}</p>
                     </div>
                   ))}
                 </div>
@@ -162,271 +151,276 @@ export default function TerminalPage() {
         </div>
       </header>
 
-      {/* ── Main ── */}
-      <main className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 md:p-6 max-w-[1800px] mx-auto w-full">
+      {/* ── Main layout ── */}
+      <main className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 p-3 md:p-4 max-w-[1800px] mx-auto w-full min-h-0">
 
-        {/* Left Column */}
-        <div className="lg:col-span-5 flex flex-col gap-5">
-          <TerminalCard title={t.neuralConfig}>
+        {/* ── Left: Controls ── */}
+        <div className="lg:col-span-5 flex flex-col gap-3 min-h-0">
+          <TerminalCard title={t.neuralConfig} className="flex flex-col gap-0">
 
-            {/* Persona selector */}
-            <div className="grid grid-cols-5 gap-1.5 mb-5">
-              {PERSONAS.map((p) => {
-                const Icon = p.icon;
-                const isActive = selectedPersona === p.id;
+            {/* Persona row */}
+            <div className="grid grid-cols-5 gap-1 mb-3">
+              {PERSONAS.map(({ id, icon: Icon }) => {
+                const active = selectedPersona === id;
                 return (
-                  <button
-                    key={p.id}
-                    onClick={() => setSelectedPersona(p.id)}
+                  <button key={id} onClick={() => setSelectedPersona(id)}
                     className={cn(
-                      "flex flex-col items-center justify-center py-3 px-1 rounded-xl border transition-all duration-200 group relative overflow-hidden",
-                      isActive
-                        ? "bg-primary/15 border-primary/60 shadow-[0_0_16px_rgba(57,255,20,0.2)]"
-                        : "bg-black/20 border-primary/10 hover:border-primary/35 hover:bg-primary/5"
+                      "flex flex-col items-center justify-center py-2.5 px-1 rounded-xl border transition-all duration-150 relative overflow-hidden",
+                      active
+                        ? "bg-primary/12 border-primary/50 shadow-[0_0_12px_rgba(57,255,20,0.15)]"
+                        : "bg-transparent border-primary/8 hover:border-primary/28 hover:bg-primary/4"
                     )}
                   >
-                    {isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none rounded-xl" />
-                    )}
-                    <Icon className={cn("w-4 h-4 mb-1.5 transition-colors", isActive ? "text-primary" : "text-primary/40 group-hover:text-primary/70")} />
-                    <span className={cn("text-[9px] font-bold tracking-wider", isActive ? "text-primary" : "text-primary/40 group-hover:text-primary/70")}>
-                      {p.id}
-                    </span>
+                    {active && <div className="absolute inset-0 bg-gradient-to-b from-primary/8 to-transparent rounded-xl pointer-events-none" />}
+                    <Icon className={cn("w-3.5 h-3.5 mb-1", active ? "text-primary" : "text-primary/35 group-hover:text-primary/60")} />
+                    <span className={cn("text-[8px] font-bold tracking-wide leading-none", active ? "text-primary" : "text-primary/30")}>{id}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Toggles row */}
-            <div className="flex gap-2 mb-5">
-              {/* Expert mode */}
-              <button
-                onClick={() => setIsExpertMode(!isExpertMode)}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[11px] font-bold transition-all duration-200 flex-1",
-                  isExpertMode
-                    ? "bg-primary/15 border-primary/50 text-primary shadow-[0_0_12px_rgba(57,255,20,0.15)]"
-                    : "glass border-primary/10 text-primary/45 hover:border-primary/30 hover:text-primary/70"
-                )}
-              >
-                <div className={cn("w-2 h-2 rounded-full transition-all", isExpertMode ? "bg-primary shadow-[0_0_6px_rgba(57,255,20,0.8)]" : "bg-primary/20")} />
-                {t.expertMode}
-              </button>
-            </div>
-
-            {/* Image upload */}
-            <div className="glass-card rounded-xl p-3 mb-5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] text-primary/60 uppercase font-bold tracking-wider flex items-center gap-1.5">
-                  <ImageIcon className="w-3 h-3" />
-                  {t.reverseImage}
-                </span>
-                {selectedImage && (
-                  <button onClick={() => setSelectedImage(null)} className="text-[10px] text-red-400/70 hover:text-red-400 uppercase tracking-wider">
-                    ✕ Remove
-                  </button>
-                )}
-              </div>
-
-              {!selectedImage ? (
-                <label className={cn(
-                  "flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/15 p-5 cursor-pointer hover:border-primary/35 hover:bg-primary/3 transition-all duration-200",
-                  isImageLoading && "cursor-wait opacity-50"
-                )}>
-                  {isImageLoading ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                      <span className="text-[10px] text-primary/60 uppercase">{t.uploading}</span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="w-10 h-10 rounded-xl bg-primary/8 border border-primary/15 flex items-center justify-center mb-2">
-                        <ImageIcon className="w-5 h-5 text-primary/40" />
-                      </div>
-                      <span className="text-[10px] text-primary/40 uppercase tracking-wider">Upload Image</span>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    disabled={isImageLoading}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setIsImageLoading(true);
-                        const reader = new FileReader();
-                        reader.onloadend = () => { setSelectedImage(reader.result as string); setIsImageLoading(false); };
-                        reader.onerror = () => setIsImageLoading(false);
-                        reader.readAsDataURL(file);
-                      }
-                    }}
-                  />
-                </label>
-              ) : (
-                <div className="relative aspect-video rounded-xl border border-primary/30 overflow-hidden group shadow-[0_0_20px_rgba(57,255,20,0.08)]">
-                  <img src={selectedImage} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
-                    <Button
-                      size="sm"
-                      onClick={handleGenerate}
-                      disabled={generate.isPending}
-                      className="bg-primary text-black hover:bg-primary/90 font-bold uppercase text-[10px] rounded-xl px-5 shadow-[0_0_16px_rgba(57,255,20,0.4)]"
-                    >
-                      {generate.isPending ? t.processing : t.analyzeImage}
-                    </Button>
-                  </div>
-                </div>
+            {/* Expert toggle */}
+            <button onClick={() => setIsExpertMode(!isExpertMode)}
+              className={cn(
+                "flex items-center gap-2 w-full px-3 py-2 rounded-xl border text-[10px] font-bold transition-all duration-150 mb-3",
+                isExpertMode
+                  ? "bg-primary/10 border-primary/45 text-primary shadow-[0_0_10px_rgba(57,255,20,0.12)]"
+                  : "glass border-primary/8 text-primary/40 hover:border-primary/25 hover:text-primary/65"
               )}
+            >
+              <div className={cn("w-1.5 h-1.5 rounded-full transition-all shrink-0", isExpertMode ? "bg-primary shadow-[0_0_5px_rgba(57,255,20,0.8)]" : "bg-primary/18")} />
+              {t.expertMode}
+              <span className="ml-auto text-[9px] opacity-50">{isExpertMode ? "ON" : "OFF"}</span>
+            </button>
+
+            {/* Image upload — collapsible */}
+            <div className="mb-3">
+              <AnimatePresence initial={false}>
+                {!selectedImage ? (
+                  <motion.div key="collapsed" layout>
+                    <button
+                      onClick={() => setImageExpanded(v => !v)}
+                      className={cn(
+                        "flex items-center gap-2 w-full px-3 py-2 rounded-xl border text-[10px] font-bold transition-all duration-150",
+                        imageExpanded ? "glass border-primary/25 text-primary/70" : "glass border-primary/8 text-primary/35 hover:border-primary/22 hover:text-primary/55"
+                      )}
+                    >
+                      <ImageIcon className="w-3 h-3 shrink-0" />
+                      {t.reverseImage}
+                      <ChevronDown className={cn("w-3 h-3 ml-auto transition-transform duration-200", imageExpanded && "rotate-180")} />
+                    </button>
+
+                    <AnimatePresence>
+                      {imageExpanded && (
+                        <motion.div
+                          key="upload-area"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                          className="overflow-hidden"
+                        >
+                          <label className={cn(
+                            "flex flex-col items-center justify-center mt-2 rounded-xl border-2 border-dashed border-primary/12 p-4 cursor-pointer hover:border-primary/30 hover:bg-primary/3 transition-all duration-200",
+                            isImageLoading && "cursor-wait opacity-50"
+                          )}>
+                            {isImageLoading ? (
+                              <div className="flex items-center gap-2 py-1">
+                                <div className="w-4 h-4 border-2 border-primary/60 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-[10px] text-primary/50">{t.uploading}</span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-1.5 py-1">
+                                <div className="w-8 h-8 rounded-lg bg-primary/6 border border-primary/12 flex items-center justify-center">
+                                  <ImageIcon className="w-4 h-4 text-primary/35" />
+                                </div>
+                                <span className="text-[9px] text-primary/35 uppercase tracking-wider">Drop or click to upload</span>
+                              </div>
+                            )}
+                            <input type="file" accept="image/*" className="hidden" disabled={isImageLoading}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setIsImageLoading(true);
+                                const reader = new FileReader();
+                                reader.onloadend = () => { setSelectedImage(reader.result as string); setIsImageLoading(false); setImageExpanded(false); };
+                                reader.onerror = () => setIsImageLoading(false);
+                                reader.readAsDataURL(file);
+                              }}
+                            />
+                          </label>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="image-preview"
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.2 }}
+                    layout
+                  >
+                    <div className="relative rounded-xl overflow-hidden border border-primary/25 shadow-[0_0_16px_rgba(57,255,20,0.07)] group aspect-video">
+                      <img src={selectedImage} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                      {/* Overlay actions */}
+                      <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <button onClick={handleGenerate} disabled={generate.isPending}
+                          className="bg-primary/90 text-black text-[9px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-wider shadow-[0_0_12px_rgba(57,255,20,0.4)] hover:bg-primary transition-colors">
+                          {generate.isPending ? t.processing : t.analyzeImage}
+                        </button>
+                        <button onClick={() => setSelectedImage(null)}
+                          className="bg-black/60 border border-red-400/40 text-red-400/80 text-[9px] font-bold px-2.5 py-1.5 rounded-lg uppercase tracking-wider hover:border-red-400 hover:text-red-400 transition-colors">
+                          ✕
+                        </button>
+                      </div>
+                      {/* Image label */}
+                      <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
+                        <ImageIcon className="w-2.5 h-2.5 text-primary/60" />
+                        <span className="text-[9px] text-primary/60 uppercase tracking-wider">{t.reverseImage}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Text input */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label className="text-[11px] text-primary/60 tracking-widest uppercase">{t.inputVector}</label>
-                <span className="text-[10px] text-primary/25">{inputIdea.length} {t.chars}</span>
+                <label className="text-[10px] text-primary/45 tracking-widest uppercase">{t.inputVector}</label>
+                {inputIdea.length > 0 && (
+                  <span className="text-[9px] text-primary/22">{inputIdea.length}{t.chars}</span>
+                )}
               </div>
+
               <Textarea
                 value={inputIdea}
                 onChange={(e) => setInputIdea(e.target.value)}
                 placeholder={t.placeholder}
-                className="min-h-[180px] bg-black/30 border-primary/15 text-primary/90 placeholder:text-primary/18 font-mono text-sm resize-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 rounded-xl backdrop-blur-sm"
+                dir={inputIsPersian ? "rtl" : "ltr"}
+                className={cn(
+                  "border-primary/12 text-primary/85 placeholder:text-primary/25 font-mono text-sm resize-none focus:border-primary/40 focus:ring-1 focus:ring-primary/15 rounded-xl backdrop-blur-sm transition-all duration-200",
+                  inputIdea.length === 0 ? "min-h-[90px]" : "min-h-[130px]",
+                  inputIsPersian && "text-right"
+                )}
+                style={{
+                  direction: inputIsPersian ? "rtl" : "ltr",
+                  background: "rgba(6, 12, 6, 0.55)",
+                }}
               />
 
-              <Button
-                onClick={handleGenerate}
-                disabled={generate.isPending || (!inputIdea.trim() && !selectedImage)}
-                className={cn(
-                  "w-full h-12 text-sm font-display tracking-[0.18em] uppercase transition-all duration-300 relative overflow-hidden group rounded-xl border",
-                  generate.isPending
-                    ? "bg-primary/8 border-primary/20 text-primary/40 cursor-wait"
-                    : "bg-primary/10 border-primary/40 text-primary hover:bg-primary hover:text-black hover:shadow-[0_0_28px_rgba(57,255,20,0.4)] hover:border-primary"
-                )}
-              >
-                {generate.isPending ? (
-                  <span className="flex items-center gap-2 justify-center">
-                    <div className="w-3.5 h-3.5 border-2 border-primary/60 border-t-transparent rounded-full animate-spin" />
-                    {t.processing}
-                  </span>
-                ) : (
-                  <>
-                    {t.execute}
-                    <motion.div
-                      className="absolute inset-0 bg-primary/10 translate-x-[-100%]"
-                      whileHover={{ translateX: "100%" }}
-                      transition={{ duration: 0.4 }}
-                    />
-                  </>
-                )}
-              </Button>
+              <motion.div layout transition={{ duration: 0.15 }}>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={generate.isPending || (!inputIdea.trim() && !selectedImage)}
+                  className={cn(
+                    "w-full h-10 text-xs font-display tracking-[0.2em] uppercase transition-all duration-200 relative overflow-hidden rounded-xl border",
+                    generate.isPending
+                      ? "bg-primary/6 border-primary/15 text-primary/35 cursor-wait"
+                      : "bg-primary/8 border-primary/35 text-primary hover:bg-primary hover:text-black hover:shadow-[0_0_22px_rgba(57,255,20,0.35)] hover:border-primary active:scale-[0.99]"
+                  )}
+                >
+                  {generate.isPending ? (
+                    <span className="flex items-center gap-2 justify-center">
+                      <div className="w-3 h-3 border border-primary/50 border-t-transparent rounded-full animate-spin" />
+                      {t.processing}
+                    </span>
+                  ) : t.execute}
+                </Button>
+              </motion.div>
             </div>
           </TerminalCard>
-
-          {/* Stats bar */}
-          <div className="hidden lg:grid grid-cols-2 gap-3">
-            {[
-              { label: "MEM_USAGE", val: 45 },
-              { label: "CPU_LOAD", val: 62 },
-            ].map((s) => (
-              <div key={s.label} className="glass rounded-xl p-3">
-                <div className="text-[9px] text-primary/35 mb-2 tracking-widest">{s.label}</div>
-                <div className="w-full h-1 bg-primary/8 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full"
-                    style={{ width: `${s.val}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Right Column — Output */}
-        <div className="lg:col-span-7 h-full min-h-[500px] overflow-hidden">
-          <TerminalCard title={t.outputStream} className="h-full flex flex-col" glow={!!currentOutput}>
+        {/* ── Right: Output ── */}
+        <motion.div layout className="lg:col-span-7 flex flex-col min-h-[420px]" transition={{ duration: 0.3 }}>
+          <TerminalCard title={t.outputStream} className="flex-1 flex flex-col" glow={!!currentOutput}>
 
-            {/* Tabs */}
-            {currentOutput && (
-              <div className="flex items-center justify-between border-b border-primary/8 px-1 pb-2 mb-2 gap-2 flex-wrap">
-                <div className="flex gap-1">
-                  {(["original", "english", "json"] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={cn(
-                        "px-3 py-1.5 text-[10px] font-bold rounded-lg tracking-wider uppercase transition-all duration-200",
-                        activeTab === tab
-                          ? "bg-primary/20 text-primary border border-primary/40 shadow-[0_0_10px_rgba(57,255,20,0.15)]"
-                          : "text-primary/35 hover:text-primary/65 hover:bg-primary/5"
-                      )}
-                    >
-                      {tab === "original" ? t.original : tab === "english" ? t.english : t.json}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  className="px-3 py-1.5 text-[10px] glass rounded-lg border border-primary/15 text-primary/50 hover:text-primary hover:border-primary/35 transition-all uppercase tracking-wider"
-                  onClick={() => {
-                    const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
-                    navigator.clipboard.writeText(text || "");
-                  }}
+            {/* Tab bar — only when output exists */}
+            <AnimatePresence>
+              {currentOutput && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex items-center justify-between border-b border-primary/8 pb-2 mb-3 gap-2 overflow-hidden"
                 >
-                  {t.copy}
-                </button>
-              </div>
-            )}
+                  <div className="flex gap-1">
+                    {(["original", "english", "json"] as const).map((tab) => (
+                      <button key={tab} onClick={() => setActiveTab(tab)}
+                        className={cn(
+                          "px-2.5 py-1 text-[9px] font-bold rounded-lg tracking-wider uppercase transition-all duration-150",
+                          activeTab === tab
+                            ? "bg-primary/18 text-primary border border-primary/35 shadow-[0_0_8px_rgba(57,255,20,0.12)]"
+                            : "text-primary/28 hover:text-primary/60 hover:bg-primary/5 border border-transparent"
+                        )}
+                      >
+                        {tab === "original" ? t.original : tab === "english" ? t.english : t.json}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    className="px-2.5 py-1 text-[9px] glass rounded-lg border border-primary/12 text-primary/40 hover:text-primary/80 hover:border-primary/30 transition-all uppercase tracking-wider"
+                    onClick={() => {
+                      const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
+                      navigator.clipboard.writeText(text || "");
+                    }}
+                  >{t.copy}</button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <div className="flex-1 overflow-auto relative min-h-0 pr-1">
+            {/* Content area */}
+            <div className="flex-1 overflow-auto min-h-0 pr-0.5">
               <AnimatePresence mode="wait">
                 {generate.isPending ? (
-                  <motion.div
-                    key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex flex-col items-center justify-center h-full text-primary/40 gap-5"
+                  <motion.div key="loading"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex flex-col items-center justify-center h-full gap-4 py-12"
                   >
-                    <div className="relative w-16 h-16">
-                      <div className="absolute inset-0 rounded-full border-2 border-primary/10" />
-                      <div className="absolute inset-0 rounded-full border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin" />
-                      <div className="absolute inset-2 rounded-full border border-primary/20 animate-ping" />
+                    <div className="relative w-12 h-12">
+                      <div className="absolute inset-0 rounded-full border border-primary/10" />
+                      <div className="absolute inset-0 rounded-full border border-t-primary/80 border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                      <div className="absolute inset-2 rounded-full border border-primary/15 animate-ping" />
                     </div>
-                    <div className="text-sm font-mono animate-pulse text-primary/60">{t.processing}</div>
-                    <div className="text-[11px] text-primary/30">Accessing {selectedPersona} Neural Net</div>
+                    <div className="text-xs font-mono animate-pulse text-primary/50">{t.processing}</div>
+                    <div className="text-[10px] text-primary/25">— {selectedPersona} —</div>
                   </motion.div>
+
                 ) : currentOutput ? (
-                  <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="h-full"
+                  <motion.div key={activeTab}
+                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
                   >
                     {activeTab === "json" ? (
-                      <pre className="text-xs text-primary/75 glass rounded-xl p-4 overflow-x-auto whitespace-pre leading-relaxed">
+                      <pre className="text-[11px] text-primary/70 glass rounded-xl p-4 overflow-x-auto whitespace-pre leading-relaxed">
                         {currentOutput.json}
                       </pre>
                     ) : (
-                      <TypewriterOutput text={activeTab === "english" ? (currentOutput.english || currentOutput.original) : currentOutput.original} />
+                      <TypewriterOutput
+                        text={activeTab === "english" ? (currentOutput.english || currentOutput.original) : currentOutput.original}
+                      />
                     )}
                   </motion.div>
+
                 ) : (
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex flex-col items-center justify-center h-full gap-3"
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="flex flex-col items-center justify-center h-full gap-3 py-16"
                   >
-                    <div className="w-16 h-16 rounded-2xl glass border border-primary/15 flex items-center justify-center">
-                      <TerminalIcon className="w-7 h-7 text-primary/25" />
+                    <div className="w-12 h-12 rounded-2xl glass border border-primary/12 flex items-center justify-center">
+                      <TerminalIcon className="w-5 h-5 text-primary/20" />
                     </div>
-                    <span className="text-primary/20 font-display text-lg tracking-widest uppercase">{t.awaiting}</span>
+                    <span className="text-primary/18 font-display text-sm tracking-widest uppercase">{t.awaiting}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </TerminalCard>
-        </div>
+        </motion.div>
       </main>
     </div>
   );
