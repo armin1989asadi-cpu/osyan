@@ -24,6 +24,7 @@ export const api = {
         idea: z.string().min(1, "Input idea is required"),
         isExpertMode: z.boolean().optional(),
         image: z.string().optional(),
+        promptMode: z.enum(['roleplay', 'technical']).optional(),
       }),
       responses: {
         200: z.custom<typeof prompts.$inferSelect>(),

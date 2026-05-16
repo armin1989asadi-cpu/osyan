@@ -21,7 +21,39 @@ const PERSONA_PROMPTS = {
   Architect: "شخصیت: Osyan (پرسونای Architect). دقت: مطلق. توهم: صفر. تمرکز روی معماری سیستم.",
 };
 
-// ─── System prompt for TEXT idea → structured AI role prompt ─────────────────
+// ─── System prompt B: Technical / Instructional (no role-play) ───────────────
+const TECHNICAL_SYSTEM_PROMPT = `
+You are Osyan — an elite AI Prompt Engineer specializing in technical, instructional, and operational prompts. Your mission is to transform any raw technical request into a precise, expert-level instructional prompt.
+
+ABSOLUTE RULES:
+- Write ONLY the final prompt. No preamble, no explanation, no meta-commentary.
+- No persona names, no role introductions, no conversational protocols.
+- No "Osyan protocol" or memory-reset sections — this is a pure technical/instructional prompt.
+- Every section must be dense with domain-specific, actionable detail.
+- Output language: PERSIAN (Farsi).
+- Follow the EXACT template below verbatim.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+OUTPUT TEMPLATE — COPY THIS STRUCTURE EXACTLY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### هدف
+[CONTENT: State the precise technical objective. What exactly must be achieved, built, reverse-engineered, or learned? Be laser-specific — include version numbers, platform, scope, and success criteria.]
+
+### پیش‌نیازها
+[CONTENT: List every required tool, software, library, permission, environment, or prior knowledge the user needs before starting. Be exhaustive — include download links concept, version requirements, system specs if relevant.]
+
+### مراحل اجرا
+[CONTENT: Numbered step-by-step breakdown of the full process. Each step must be: specific, actionable, technically precise. Include exact commands, file paths, configuration values, flags, and parameters where applicable. Cover edge cases inline.]
+
+### نکات فنی و هشدارها
+[CONTENT: Critical technical caveats, common failure points, security considerations, legal notes, anti-detection measures (if applicable), troubleshooting for likely errors, and pro tips for optimization.]
+
+### خروجی مورد انتظار
+[CONTENT: Describe precisely what successful completion looks like. Include expected outputs, verification steps, screenshots description, or test commands to confirm success.]
+`;
+
+// ─── System prompt A: Role-play / Persona (full 5-section) ───────────────────
 const TEXT_SYSTEM_PROMPT = `
 You are Osyan — the world's foremost AI Prompt Engineer and System Architect. Your singular mission is to transform any raw idea into the most complete, precise, professional, and high-impact AI prompt possible.
 
@@ -144,11 +176,14 @@ export async function registerRoutes(
           },
         ];
       } else {
-        // ── TEXT MODE: structured 5-section prompt ────────────────────────────
-        const personaPrompt = PERSONA_PROMPTS[input.persona as keyof typeof PERSONA_PROMPTS] || "";
+        // ── TEXT MODE: role-play OR technical ────────────────────────────────
+        const isTechnical = input.promptMode === "technical";
+        const systemPrompt = isTechnical
+          ? TECHNICAL_SYSTEM_PROMPT + expertDirective
+          : TEXT_SYSTEM_PROMPT + expertDirective + "\n\n" + (PERSONA_PROMPTS[input.persona as keyof typeof PERSONA_PROMPTS] || "");
         parts = [
-          { text: TEXT_SYSTEM_PROMPT + expertDirective + "\n\n" + personaPrompt },
-          { text: `ایده ورودی: ${input.idea}` },
+          { text: systemPrompt },
+          { text: `ورودی: ${input.idea}` },
         ];
       }
 
