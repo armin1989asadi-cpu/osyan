@@ -5,31 +5,22 @@
 @tailwind utilities;
 
 :root {
-  /* HSL Values */
-  --background: 0 0% 5%;       /* #0c0c0c */
-  --foreground: 120 70% 80%;   /* #a8f0a8 */
-  
-  --primary: 111 100% 54%;     /* #39ff14 - Neon Green */
+  --background: 0 0% 5%;
+  --foreground: 120 70% 80%;
+  --primary: 111 100% 54%;
   --primary-foreground: 0 0% 0%;
-  
   --secondary: 120 20% 10%;
   --secondary-foreground: 111 100% 54%;
-  
   --muted: 120 10% 15%;
   --muted-foreground: 120 30% 40%;
-  
   --accent: 111 100% 54%;
   --accent-foreground: 0 0% 0%;
-  
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 0%;
-
   --border: 120 30% 20%;
   --input: 120 30% 15%;
   --ring: 111 100% 54%;
-  
-  --radius: 0px; /* Cyberpunk style usually sharp */
-
+  --radius: 16px;
   --font-mono: 'Fira Code', monospace;
   --font-display: 'Share Tech Mono', monospace;
 }
@@ -46,85 +37,138 @@
   }
 }
 
-/* Custom Scrollbar for Webkit */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #0c0c0c; 
-  border-left: 1px solid #1a1a1a;
-}
-::-webkit-scrollbar-thumb {
-  background: #1a1a1a; 
-  border: 1px solid #39ff14;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #39ff14;
+/* ── Glassmorphism utilities ── */
+.glass {
+  background: rgba(12, 20, 12, 0.55);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(57, 255, 20, 0.13);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(57, 255, 20, 0.08);
 }
 
-/* CRT Scanline Effect */
+.glass-strong {
+  background: rgba(10, 18, 10, 0.72);
+  backdrop-filter: blur(32px) saturate(1.6);
+  -webkit-backdrop-filter: blur(32px) saturate(1.6);
+  border: 1px solid rgba(57, 255, 20, 0.18);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.6),
+    0 0 0 0.5px rgba(57, 255, 20, 0.06),
+    inset 0 1px 0 rgba(57, 255, 20, 0.12);
+}
+
+.glass-header {
+  background: rgba(8, 14, 8, 0.78);
+  backdrop-filter: blur(40px) saturate(1.8);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  border-bottom: 1px solid rgba(57, 255, 20, 0.12);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.glass-card {
+  background: rgba(15, 24, 15, 0.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(57, 255, 20, 0.1);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(57, 255, 20, 0.07);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(57, 255, 20, 0.28);
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(57, 255, 20, 0.07),
+    inset 0 1px 0 rgba(57, 255, 20, 0.12);
+}
+
+.glass-glow {
+  background: rgba(12, 20, 12, 0.55);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(57, 255, 20, 0.35);
+  box-shadow:
+    0 0 30px rgba(57, 255, 20, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(57, 255, 20, 0.15);
+}
+
+/* ── Neon glow on text ── */
+.neon-text {
+  text-shadow:
+    0 0 8px rgba(57, 255, 20, 0.8),
+    0 0 20px rgba(57, 255, 20, 0.5),
+    0 0 40px rgba(57, 255, 20, 0.25);
+}
+
+.neon-text-subtle {
+  text-shadow: 0 0 12px rgba(57, 255, 20, 0.4);
+}
+
+/* ── Gradient border trick ── */
+.border-gradient {
+  position: relative;
+  border-radius: 16px;
+}
+.border-gradient::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(57,255,20,0.4) 0%, rgba(57,255,20,0.05) 50%, rgba(57,255,20,0.2) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgba(12,12,12,0.8); }
+::-webkit-scrollbar-thumb {
+  background: rgba(57, 255, 20, 0.2);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(57, 255, 20, 0.5); }
+
+/* ── CRT Scanline ── */
 .scanlines {
-  background: linear-gradient(
+  background: repeating-linear-gradient(
     to bottom,
-    rgba(255,255,255,0),
-    rgba(255,255,255,0) 50%,
-    rgba(0,0,0,0.2) 50%,
-    rgba(0,0,0,0.2)
+    transparent 0px,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
   );
-  background-size: 100% 4px;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   pointer-events: none;
   z-index: 50;
-  opacity: 0.6;
+  opacity: 0.5;
 }
 
-/* Screen Flicker Animation */
 @keyframes flicker {
-  0% { opacity: 0.97; }
-  5% { opacity: 0.95; }
-  10% { opacity: 0.9; }
-  15% { opacity: 0.95; }
-  20% { opacity: 0.99; }
-  25% { opacity: 0.95; }
-  30% { opacity: 0.9; }
-  35% { opacity: 0.96; }
-  40% { opacity: 0.98; }
-  45% { opacity: 0.95; }
-  50% { opacity: 0.99; }
-  55% { opacity: 0.93; }
-  60% { opacity: 0.9; }
-  65% { opacity: 0.96; }
-  70% { opacity: 1; }
-  75% { opacity: 0.97; }
-  80% { opacity: 0.95; }
-  85% { opacity: 0.92; }
-  90% { opacity: 0.96; }
-  95% { opacity: 0.99; }
-  100% { opacity: 0.94; }
+  0%   { opacity: 0.97; }
+  30%  { opacity: 0.94; }
+  60%  { opacity: 0.98; }
+  100% { opacity: 0.95; }
 }
+.crt-flicker { animation: flicker 3s infinite; }
 
-.crt-flicker {
-  animation: flicker 0.15s infinite;
-}
-
-/* Glitch Effect Classes */
-.glitch-text {
-  position: relative;
-}
+/* ── Glitch Effect ── */
+.glitch-text { position: relative; }
 
 .glitch-text::before,
 .glitch-text::after {
   content: attr(data-text);
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   background: #0c0c0c;
 }
 
@@ -143,34 +187,34 @@
 }
 
 @keyframes glitch-anim {
-  0% { clip: rect(31px, 9999px, 94px, 0); }
-  4.16% { clip: rect(70px, 9999px, 19px, 0); }
-  8.33% { clip: rect(6px, 9999px, 14px, 0); }
-  12.5% { clip: rect(93px, 9999px, 66px, 0); }
-  16.66% { clip: rect(21px, 9999px, 8px, 0); }
-  20.83% { clip: rect(2px, 9999px, 26px, 0); }
-  25% { clip: rect(61px, 9999px, 43px, 0); }
+  0%     { clip: rect(31px, 9999px, 94px, 0); }
+  4.16%  { clip: rect(70px, 9999px, 19px, 0); }
+  8.33%  { clip: rect(6px,  9999px, 14px, 0); }
+  12.5%  { clip: rect(93px, 9999px, 66px, 0); }
+  16.66% { clip: rect(21px, 9999px, 8px,  0); }
+  20.83% { clip: rect(2px,  9999px, 26px, 0); }
+  25%    { clip: rect(61px, 9999px, 43px, 0); }
   29.16% { clip: rect(51px, 9999px, 52px, 0); }
   33.33% { clip: rect(13px, 9999px, 20px, 0); }
-  37.5% { clip: rect(85px, 9999px, 63px, 0); }
+  37.5%  { clip: rect(85px, 9999px, 63px, 0); }
   41.66% { clip: rect(38px, 9999px, 16px, 0); }
   45.83% { clip: rect(64px, 9999px, 98px, 0); }
-  50% { clip: rect(2px, 9999px, 4px, 0); }
+  50%    { clip: rect(2px,  9999px, 4px,  0); }
   54.16% { clip: rect(95px, 9999px, 35px, 0); }
-  58.33% { clip: rect(5px, 9999px, 68px, 0); }
-  62.5% { clip: rect(18px, 9999px, 94px, 0); }
-  66.66% { clip: rect(9px, 9999px, 2px, 0); }
+  58.33% { clip: rect(5px,  9999px, 68px, 0); }
+  62.5%  { clip: rect(18px, 9999px, 94px, 0); }
+  66.66% { clip: rect(9px,  9999px, 2px,  0); }
   70.83% { clip: rect(65px, 9999px, 41px, 0); }
-  75% { clip: rect(26px, 9999px, 92px, 0); }
+  75%    { clip: rect(26px, 9999px, 92px, 0); }
   79.16% { clip: rect(15px, 9999px, 86px, 0); }
   83.33% { clip: rect(62px, 9999px, 13px, 0); }
-  87.5% { clip: rect(89px, 9999px, 5px, 0); }
+  87.5%  { clip: rect(89px, 9999px, 5px,  0); }
   91.66% { clip: rect(41px, 9999px, 68px, 0); }
   95.83% { clip: rect(58px, 9999px, 96px, 0); }
-  100% { clip: rect(7px, 9999px, 89px, 0); }
+  100%   { clip: rect(7px,  9999px, 89px, 0); }
 }
 
 @keyframes glitch-anim2 {
-  0% { clip: rect(65px, 9999px, 100px, 0); }
-  100% { clip: rect(10px, 9999px, 85px, 0); }
+  0%   { clip: rect(65px, 9999px, 100px, 0); }
+  100% { clip: rect(10px, 9999px, 85px,  0); }
 }

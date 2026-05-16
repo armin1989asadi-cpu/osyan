@@ -9,17 +9,17 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { History, Terminal as TerminalIcon, Cpu, ShieldAlert, Sparkles, BrainCircuit } from "lucide-react";
+import { History, Terminal as TerminalIcon, Cpu, ShieldAlert, Sparkles, BrainCircuit, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 
 const PERSONAS = [
-  { id: "Gemini", icon: Sparkles, desc: "Standard creative engine" },
-  { id: "GPT-4", icon: BrainCircuit, desc: "Analytical reasoning" },
-  { id: "Grok", icon: ShieldAlert, desc: "Direct, unfiltered mode" },
-  { id: "Claude", icon: Cpu, desc: "Detailed & articulate" },
-  { id: "Architect", icon: TerminalIcon, desc: "Strict system design" },
+  { id: "Gemini", icon: Sparkles, desc: "Creative engine" },
+  { id: "GPT-4", icon: BrainCircuit, desc: "Analytical" },
+  { id: "Grok", icon: ShieldAlert, desc: "Unfiltered" },
+  { id: "Claude", icon: Cpu, desc: "Articulate" },
+  { id: "Architect", icon: TerminalIcon, desc: "System design" },
 ] as const;
 
 export default function TerminalPage() {
@@ -29,7 +29,7 @@ export default function TerminalPage() {
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [isExpertMode, setIsExpertMode] = useState(false);
   const [language, setLanguage] = useState<"en" | "fa">("en");
-  const [currentOutput, setCurrentOutput] = useState<{ original: string, english?: string, json?: string } | null>(null);
+  const [currentOutput, setCurrentOutput] = useState<{ original: string; english?: string; json?: string } | null>(null);
   const [activeTab, setActiveTab] = useState<"original" | "english" | "json">("original");
 
   const generate = useGeneratePrompt();
@@ -37,19 +37,18 @@ export default function TerminalPage() {
 
   const handleGenerate = async () => {
     if (!inputIdea.trim() && !selectedImage) return;
-    
     try {
       setCurrentOutput(null);
       const result = await generate.mutateAsync({
         persona: selectedPersona,
         idea: inputIdea || (selectedImage ? "Reverse Image Analysis" : ""),
         isExpertMode,
-        image: selectedImage || undefined // Send full data URL, server will extract mime + base64
+        image: selectedImage || undefined,
       } as any);
-      setCurrentOutput({ 
+      setCurrentOutput({
         original: result.generatedPrompt,
         english: result.englishPrompt || result.generatedPrompt,
-        json: result.jsonPrompt || "{}"
+        json: result.jsonPrompt || "{}",
       });
       setActiveTab("original");
     } catch (error) {
@@ -60,59 +59,27 @@ export default function TerminalPage() {
   const loadHistoryItem = (item: any) => {
     setInputIdea(item.inputIdea);
     setSelectedPersona(item.persona as any);
-    setCurrentOutput({ 
-      original: item.generatedPrompt,
-      english: item.englishPrompt,
-      json: item.jsonPrompt
-    });
+    setCurrentOutput({ original: item.generatedPrompt, english: item.englishPrompt, json: item.jsonPrompt });
     setActiveTab("original");
   };
 
   const t = {
     en: {
-      status: "SYSTEM ONLINE",
-      latency: "LATENCY: 12ms",
-      logs: "LOGS",
-      opLogs: "OPERATION LOGS",
-      neuralConfig: "NEURAL CONFIGURATION",
-      expertMode: "EXPERT PROTOCOL",
-      reverseImage: "REVERSE IMAGE PROTOCOL",
-      analyzeImage: "ANALYZE IMAGE",
-      uploading: "UPLOADING...",
-      inputVector: "Input Vector",
-      chars: "CHARS",
-      placeholder: "Enter raw directive or image analysis...",
-      execute: "EXECUTE",
-      processing: "PROCESSING...",
-      outputStream: "OUTPUT STREAM",
-      original: "ORIGINAL",
-      english: "ENGLISH",
-      json: "JSON",
-      awaiting: "AWAITING INPUT",
-      copy: "COPY TO CLIPBOARD"
+      status: "SYSTEM ONLINE", latency: "12ms", logs: "LOGS", opLogs: "OPERATION LOGS",
+      neuralConfig: "NEURAL CONFIG", expertMode: "EXPERT PROTOCOL", reverseImage: "REVERSE IMAGE",
+      analyzeImage: "ANALYZE IMAGE", uploading: "UPLOADING...", inputVector: "Input Vector",
+      chars: "CHARS", placeholder: "Enter raw directive...", execute: "EXECUTE",
+      processing: "PROCESSING...", outputStream: "OUTPUT STREAM", original: "ORIGINAL",
+      english: "ENGLISH", json: "JSON", awaiting: "AWAITING INPUT", copy: "COPY",
     },
     fa: {
-      status: "سیستم فعال",
-      latency: "تاخیر: ۱۲ میلی‌ثانیه",
-      logs: "لاگ‌ها",
-      opLogs: "گزارش‌های عملیات",
-      neuralConfig: "تنظیمات عصبی",
-      expertMode: "پروتکل تخصصی",
-      reverseImage: "مهندسی معکوس تصویر",
-      analyzeImage: "تحلیل تصویر",
-      uploading: "در حال دریافت...",
-      inputVector: "ورودی ایده",
-      chars: "کاراکتر",
-      placeholder: "دستور خام یا تحلیل تصویر را اینجا وارد کنید...",
-      execute: "اجرا",
-      processing: "در حال پردازش...",
-      outputStream: "خروجی سیستم",
-      original: "اصلی",
-      english: "انگلیسی",
-      json: "JSON",
-      awaiting: "در انتظار ورودی",
-      copy: "کپی در حافظه"
-    }
+      status: "سیستم فعال", latency: "۱۲ms", logs: "لاگ‌ها", opLogs: "گزارش عملیات",
+      neuralConfig: "تنظیمات", expertMode: "پروتکل تخصصی", reverseImage: "مهندسی معکوس",
+      analyzeImage: "تحلیل تصویر", uploading: "در حال دریافت...", inputVector: "ایده ورودی",
+      chars: "کاراکتر", placeholder: "دستور خام را وارد کنید...", execute: "اجرا",
+      processing: "در حال پردازش...", outputStream: "خروجی سیستم", original: "فارسی",
+      english: "انگلیسی", json: "JSON", awaiting: "در انتظار ورودی", copy: "کپی",
+    },
   }[language];
 
   return (
@@ -120,63 +87,70 @@ export default function TerminalPage() {
       <MatrixBackground />
       <CRTEffect />
 
-      {/* Header */}
-      <header className="relative z-20 border-b border-border bg-background/90 backdrop-blur p-4 flex justify-between items-center">
+      {/* ── Header ── */}
+      <header className="relative z-20 glass-header px-5 py-3 flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <GlitchLogo />
-          <div className="hidden md:flex items-center gap-2 text-xs text-primary/60 border-l border-border pl-4">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+          <div className="scale-75 origin-left">
+            <GlitchLogo />
+          </div>
+          <div className="hidden md:flex items-center gap-2 text-[11px] text-primary/50 border-l border-primary/10 pl-4">
+            <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_6px_#4ade80] animate-pulse" />
             {t.status}
-            <span className="opacity-50 mx-2">|</span>
+            <span className="opacity-30 mx-1">|</span>
             {t.latency}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex bg-black/40 border border-primary/20 rounded p-0.5">
-            <button 
-              onClick={() => setLanguage("en")}
-              className={cn("px-2 py-1 text-[10px] rounded transition-colors", language === "en" ? "bg-primary text-black" : "text-primary/60 hover:text-primary")}
-            >
-              EN
-            </button>
-            <button 
-              onClick={() => setLanguage("fa")}
-              className={cn("px-2 py-1 text-[10px] rounded transition-colors", language === "fa" ? "bg-primary text-black" : "text-primary/60 hover:text-primary")}
-            >
-              FA
-            </button>
+          {/* Language toggle */}
+          <div className="flex glass rounded-xl p-0.5 gap-0.5">
+            {(["en", "fa"] as const).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => setLanguage(lang)}
+                className={cn(
+                  "px-3 py-1.5 text-[10px] rounded-[10px] font-bold tracking-wider transition-all duration-200",
+                  language === lang
+                    ? "bg-primary text-black shadow-[0_0_10px_rgba(57,255,20,0.4)]"
+                    : "text-primary/50 hover:text-primary"
+                )}
+              >
+                {lang.toUpperCase()}
+              </button>
+            ))}
           </div>
+
+          {/* History sheet */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" className="border-primary/50 text-primary hover:bg-primary/10 hover:text-primary">
-                <History className="w-4 h-4 mr-2" />
+              <Button variant="outline" size="sm" className="glass border-primary/20 text-primary/70 hover:text-primary hover:border-primary/50 hover:bg-primary/5 rounded-xl gap-2 text-[11px]">
+                <History className="w-3.5 h-3.5" />
                 {t.logs}
               </Button>
             </SheetTrigger>
-            <SheetContent side={language === "fa" ? "left" : "right"} className="bg-background/95 border-l border-primary/30 w-[400px]">
-              <SheetHeader>
-                <SheetTitle className="font-display text-primary tracking-widest border-b border-primary/20 pb-4">
+            <SheetContent side={language === "fa" ? "left" : "right"} className="glass-strong border-primary/15 w-[380px] rounded-l-2xl">
+              <SheetHeader className="border-b border-primary/10 pb-4">
+                <SheetTitle className="font-display text-primary/80 tracking-widest text-sm">
                   {t.opLogs}
                 </SheetTitle>
               </SheetHeader>
               <ScrollArea className="h-[calc(100vh-100px)] mt-4">
-                <div className="space-y-4 pr-4">
+                <div className="space-y-3 pr-2">
                   {history.data?.map((item) => (
-                    <div 
-                      key={item.id} 
+                    <div
+                      key={item.id}
                       onClick={() => loadHistoryItem(item)}
-                      className="p-3 border border-border rounded hover:border-primary/50 cursor-pointer transition-colors group bg-black/40 text-left ltr:text-left rtl:text-right"
+                      className="glass-card rounded-xl p-3 cursor-pointer group text-left ltr:text-left rtl:text-right"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="text-xs font-bold text-primary group-hover:text-white uppercase">
+                      <div className="flex justify-between items-start mb-1.5">
+                        <span className="text-[10px] font-bold text-primary/70 group-hover:text-primary uppercase tracking-wider">
                           [{item.persona}]
                         </span>
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-[9px] text-primary/30">
                           {item.createdAt && formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2 font-mono opacity-80">
+                      <p className="text-[11px] text-primary/40 line-clamp-2 font-mono leading-relaxed">
                         {item.inputIdea}
                       </p>
                     </div>
@@ -188,13 +162,15 @@ export default function TerminalPage() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 md:p-8 max-w-[1800px] mx-auto w-full">
-        
-        {/* Left Column: Controls */}
-        <div className="lg:col-span-5 flex flex-col gap-6">
+      {/* ── Main ── */}
+      <main className="relative z-10 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5 p-4 md:p-6 max-w-[1800px] mx-auto w-full">
+
+        {/* Left Column */}
+        <div className="lg:col-span-5 flex flex-col gap-5">
           <TerminalCard title={t.neuralConfig}>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+
+            {/* Persona selector */}
+            <div className="grid grid-cols-5 gap-1.5 mb-5">
               {PERSONAS.map((p) => {
                 const Icon = p.icon;
                 const isActive = selectedPersona === p.id;
@@ -203,225 +179,232 @@ export default function TerminalPage() {
                     key={p.id}
                     onClick={() => setSelectedPersona(p.id)}
                     className={cn(
-                      "flex flex-col items-center justify-center p-3 border transition-all duration-200 group relative overflow-hidden",
-                      isActive 
-                        ? "bg-primary text-black border-primary" 
-                        : "bg-transparent text-primary/70 border-primary/30 hover:border-primary hover:text-primary"
+                      "flex flex-col items-center justify-center py-3 px-1 rounded-xl border transition-all duration-200 group relative overflow-hidden",
+                      isActive
+                        ? "bg-primary/15 border-primary/60 shadow-[0_0_16px_rgba(57,255,20,0.2)]"
+                        : "bg-black/20 border-primary/10 hover:border-primary/35 hover:bg-primary/5"
                     )}
                   >
                     {isActive && (
-                      <div className="absolute inset-0 bg-primary opacity-20 animate-pulse pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none rounded-xl" />
                     )}
-                    <Icon className="w-5 h-5 mb-2" />
-                    <span className="text-xs font-bold tracking-wider">{p.id}</span>
+                    <Icon className={cn("w-4 h-4 mb-1.5 transition-colors", isActive ? "text-primary" : "text-primary/40 group-hover:text-primary/70")} />
+                    <span className={cn("text-[9px] font-bold tracking-wider", isActive ? "text-primary" : "text-primary/40 group-hover:text-primary/70")}>
+                      {p.id}
+                    </span>
                   </button>
                 );
               })}
             </div>
 
-            <div className="flex flex-col gap-2 mb-6">
-              <div className="flex items-center gap-2 p-2 border border-primary/20 bg-black/40">
-                <input 
-                  type="checkbox" 
-                  id="expert-mode" 
-                  checked={isExpertMode}
-                  onChange={(e) => setIsExpertMode(e.target.checked)}
-                  className="w-4 h-4 accent-primary"
-                />
-                <label htmlFor="expert-mode" className="text-xs text-primary font-bold cursor-pointer">
-                  {t.expertMode}
-                </label>
-              </div>
-
-              <div className="p-2 border border-primary/20 bg-black/40">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-primary uppercase font-bold">{t.reverseImage}</span>
-                  {selectedImage && (
-                    <button 
-                      onClick={() => setSelectedImage(null)}
-                      className="text-[10px] text-red-500 hover:text-red-400 uppercase"
-                    >
-                      [REMOVE]
-                    </button>
-                  )}
-                </div>
-                {!selectedImage ? (
-                  <label className={cn(
-                    "flex flex-col items-center justify-center border-2 border-dashed border-primary/20 p-4 cursor-pointer hover:border-primary/50 transition-colors relative overflow-hidden",
-                    isImageLoading && "cursor-wait opacity-50"
-                  )}>
-                    {isImageLoading ? (
-                      <div className="flex flex-col items-center">
-                        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
-                        <span className="text-[10px] text-primary uppercase animate-pulse">{t.uploading}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <History className="w-6 h-6 mb-2 opacity-50" />
-                        <span className="text-[10px] text-primary/60 uppercase">Upload Source Fragment</span>
-                      </>
-                    )}
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      disabled={isImageLoading}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setIsImageLoading(true);
-                          const reader = new FileReader();
-                          reader.onloadstart = () => setIsImageLoading(true);
-                          reader.onloadend = () => {
-                            setSelectedImage(reader.result as string);
-                            setIsImageLoading(false);
-                          };
-                          reader.onerror = () => setIsImageLoading(false);
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                  </label>
-                ) : (
-                  <div className="relative aspect-video border border-primary/50 overflow-hidden group">
-                    <img src={selectedImage} className="w-full h-full object-cover opacity-80" />
-                    <div className="absolute inset-0 bg-primary/10 animate-pulse pointer-events-none" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button 
-                        size="sm"
-                        onClick={handleGenerate}
-                        disabled={generate.isPending}
-                        className="bg-primary text-black hover:bg-primary/90 font-bold uppercase text-[10px]"
-                      >
-                        {generate.isPending ? t.processing : t.analyzeImage}
-                      </Button>
-                    </div>
-                  </div>
+            {/* Toggles row */}
+            <div className="flex gap-2 mb-5">
+              {/* Expert mode */}
+              <button
+                onClick={() => setIsExpertMode(!isExpertMode)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[11px] font-bold transition-all duration-200 flex-1",
+                  isExpertMode
+                    ? "bg-primary/15 border-primary/50 text-primary shadow-[0_0_12px_rgba(57,255,20,0.15)]"
+                    : "glass border-primary/10 text-primary/45 hover:border-primary/30 hover:text-primary/70"
                 )}
-              </div>
+              >
+                <div className={cn("w-2 h-2 rounded-full transition-all", isExpertMode ? "bg-primary shadow-[0_0_6px_rgba(57,255,20,0.8)]" : "bg-primary/20")} />
+                {t.expertMode}
+              </button>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-baseline">
-                <label className="text-xs text-primary/80 tracking-widest uppercase">{t.inputVector}</label>
-                <span className="text-[10px] text-muted-foreground">{inputIdea.length} {t.chars}</span>
+            {/* Image upload */}
+            <div className="glass-card rounded-xl p-3 mb-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] text-primary/60 uppercase font-bold tracking-wider flex items-center gap-1.5">
+                  <ImageIcon className="w-3 h-3" />
+                  {t.reverseImage}
+                </span>
+                {selectedImage && (
+                  <button onClick={() => setSelectedImage(null)} className="text-[10px] text-red-400/70 hover:text-red-400 uppercase tracking-wider">
+                    ✕ Remove
+                  </button>
+                )}
               </div>
-              <Textarea 
+
+              {!selectedImage ? (
+                <label className={cn(
+                  "flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/15 p-5 cursor-pointer hover:border-primary/35 hover:bg-primary/3 transition-all duration-200",
+                  isImageLoading && "cursor-wait opacity-50"
+                )}>
+                  {isImageLoading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      <span className="text-[10px] text-primary/60 uppercase">{t.uploading}</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-10 h-10 rounded-xl bg-primary/8 border border-primary/15 flex items-center justify-center mb-2">
+                        <ImageIcon className="w-5 h-5 text-primary/40" />
+                      </div>
+                      <span className="text-[10px] text-primary/40 uppercase tracking-wider">Upload Image</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isImageLoading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setIsImageLoading(true);
+                        const reader = new FileReader();
+                        reader.onloadend = () => { setSelectedImage(reader.result as string); setIsImageLoading(false); };
+                        reader.onerror = () => setIsImageLoading(false);
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+                </label>
+              ) : (
+                <div className="relative aspect-video rounded-xl border border-primary/30 overflow-hidden group shadow-[0_0_20px_rgba(57,255,20,0.08)]">
+                  <img src={selectedImage} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                    <Button
+                      size="sm"
+                      onClick={handleGenerate}
+                      disabled={generate.isPending}
+                      className="bg-primary text-black hover:bg-primary/90 font-bold uppercase text-[10px] rounded-xl px-5 shadow-[0_0_16px_rgba(57,255,20,0.4)]"
+                    >
+                      {generate.isPending ? t.processing : t.analyzeImage}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Text input */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[11px] text-primary/60 tracking-widest uppercase">{t.inputVector}</label>
+                <span className="text-[10px] text-primary/25">{inputIdea.length} {t.chars}</span>
+              </div>
+              <Textarea
                 value={inputIdea}
                 onChange={(e) => setInputIdea(e.target.value)}
                 placeholder={t.placeholder}
-                className="min-h-[200px] bg-black/50 border-primary/30 text-primary placeholder:text-primary/20 font-mono text-sm resize-none focus:border-primary focus:ring-1 focus:ring-primary/50"
+                className="min-h-[180px] bg-black/30 border-primary/15 text-primary/90 placeholder:text-primary/18 font-mono text-sm resize-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 rounded-xl backdrop-blur-sm"
               />
-              
-              <Button 
+
+              <Button
                 onClick={handleGenerate}
-                disabled={generate.isPending || !inputIdea.trim()}
+                disabled={generate.isPending || (!inputIdea.trim() && !selectedImage)}
                 className={cn(
-                  "w-full h-14 text-lg font-display tracking-[0.2em] border-2 uppercase transition-all duration-300 relative overflow-hidden group",
-                  generate.isPending 
-                    ? "bg-primary/10 border-primary/30 text-primary/50 cursor-wait"
-                    : "bg-transparent border-primary text-primary hover:bg-primary hover:text-black hover:shadow-[0_0_20px_rgba(57,255,20,0.4)]"
+                  "w-full h-12 text-sm font-display tracking-[0.18em] uppercase transition-all duration-300 relative overflow-hidden group rounded-xl border",
+                  generate.isPending
+                    ? "bg-primary/8 border-primary/20 text-primary/40 cursor-wait"
+                    : "bg-primary/10 border-primary/40 text-primary hover:bg-primary hover:text-black hover:shadow-[0_0_28px_rgba(57,255,20,0.4)] hover:border-primary"
                 )}
               >
                 {generate.isPending ? (
-                  <span className="animate-pulse">{t.processing}</span>
+                  <span className="flex items-center gap-2 justify-center">
+                    <div className="w-3.5 h-3.5 border-2 border-primary/60 border-t-transparent rounded-full animate-spin" />
+                    {t.processing}
+                  </span>
                 ) : (
                   <>
                     {t.execute}
-                    <span className="absolute right-0 top-0 w-2 h-2 border-t border-r border-current opacity-50" />
-                    <span className="absolute bottom-0 left-0 w-2 h-2 border-b border-l border-current opacity-50" />
+                    <motion.div
+                      className="absolute inset-0 bg-primary/10 translate-x-[-100%]"
+                      whileHover={{ translateX: "100%" }}
+                      transition={{ duration: 0.4 }}
+                    />
                   </>
                 )}
               </Button>
             </div>
           </TerminalCard>
 
-          {/* System Status / Decorative */}
-          <div className="hidden lg:grid grid-cols-2 gap-4">
-            <div className="border border-border p-4 bg-black/40">
-              <div className="text-[10px] text-muted-foreground mb-1">MEM_USAGE</div>
-              <div className="w-full h-1 bg-primary/20">
-                <div className="h-full bg-primary w-[45%] animate-pulse" />
+          {/* Stats bar */}
+          <div className="hidden lg:grid grid-cols-2 gap-3">
+            {[
+              { label: "MEM_USAGE", val: 45 },
+              { label: "CPU_LOAD", val: 62 },
+            ].map((s) => (
+              <div key={s.label} className="glass rounded-xl p-3">
+                <div className="text-[9px] text-primary/35 mb-2 tracking-widest">{s.label}</div>
+                <div className="w-full h-1 bg-primary/8 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full"
+                    style={{ width: `${s.val}%` }}
+                  />
+                </div>
               </div>
-            </div>
-            <div className="border border-border p-4 bg-black/40">
-              <div className="text-[10px] text-muted-foreground mb-1">CPU_TEMP</div>
-              <div className="w-full h-1 bg-primary/20">
-                <div className="h-full bg-primary w-[62%]" />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Right Column: Output */}
+        {/* Right Column — Output */}
         <div className="lg:col-span-7 h-full min-h-[500px] overflow-hidden">
           <TerminalCard title={t.outputStream} className="h-full flex flex-col" glow={!!currentOutput}>
+
+            {/* Tabs */}
             {currentOutput && (
-              <div className="flex items-center justify-between border-b border-border bg-black/20 p-2 gap-2">
-                <div className="flex gap-2">
-                  <Button 
-                    variant={activeTab === "original" ? "default" : "ghost"} 
-                    size="sm" 
-                    className="text-[10px] h-7"
-                    onClick={() => setActiveTab("original")}
-                  >
-                    {t.original}
-                  </Button>
-                  <Button 
-                    variant={activeTab === "english" ? "default" : "ghost"} 
-                    size="sm" 
-                    className="text-[10px] h-7"
-                    onClick={() => setActiveTab("english")}
-                  >
-                    {t.english}
-                  </Button>
-                  <Button 
-                    variant={activeTab === "json" ? "default" : "ghost"} 
-                    size="sm" 
-                    className="text-[10px] h-7"
-                    onClick={() => setActiveTab("json")}
-                  >
-                    {t.json}
-                  </Button>
+              <div className="flex items-center justify-between border-b border-primary/8 px-1 pb-2 mb-2 gap-2 flex-wrap">
+                <div className="flex gap-1">
+                  {(["original", "english", "json"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={cn(
+                        "px-3 py-1.5 text-[10px] font-bold rounded-lg tracking-wider uppercase transition-all duration-200",
+                        activeTab === tab
+                          ? "bg-primary/20 text-primary border border-primary/40 shadow-[0_0_10px_rgba(57,255,20,0.15)]"
+                          : "text-primary/35 hover:text-primary/65 hover:bg-primary/5"
+                      )}
+                    >
+                      {tab === "original" ? t.original : tab === "english" ? t.english : t.json}
+                    </button>
+                  ))}
                 </div>
-                <Button 
-                   size="sm" 
-                   variant="ghost" 
-                   className="h-7 text-xs text-primary hover:bg-primary/20 gap-2"
-                   onClick={() => {
-                     const textToCopy = activeTab === 'original' ? currentOutput.original : (activeTab === 'english' ? currentOutput.english : currentOutput.json);
-                     navigator.clipboard.writeText(textToCopy || "");
-                   }}
-                 >
-                   <History className="w-3 h-3 rotate-180" />
-                   {t.copy}
-                </Button>
+                <button
+                  className="px-3 py-1.5 text-[10px] glass rounded-lg border border-primary/15 text-primary/50 hover:text-primary hover:border-primary/35 transition-all uppercase tracking-wider"
+                  onClick={() => {
+                    const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
+                    navigator.clipboard.writeText(text || "");
+                  }}
+                >
+                  {t.copy}
+                </button>
               </div>
             )}
-            <div className="flex-1 overflow-auto pr-2 relative min-h-0 p-4">
+
+            <div className="flex-1 overflow-auto relative min-h-0 pr-1">
               <AnimatePresence mode="wait">
                 {generate.isPending ? (
-                  <motion.div 
+                  <motion.div
+                    key="loading"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex flex-col items-center justify-center h-full text-primary/50 gap-4"
+                    className="flex flex-col items-center justify-center h-full text-primary/40 gap-5"
                   >
-                    <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-                    <div className="font-mono text-sm animate-pulse">{t.processing}</div>
-                    <div className="font-mono text-xs opacity-50">
-                      Accessing {selectedPersona} Neural Net
+                    <div className="relative w-16 h-16">
+                      <div className="absolute inset-0 rounded-full border-2 border-primary/10" />
+                      <div className="absolute inset-0 rounded-full border-2 border-t-primary border-r-transparent border-b-transparent border-l-transparent animate-spin" />
+                      <div className="absolute inset-2 rounded-full border border-primary/20 animate-ping" />
                     </div>
+                    <div className="text-sm font-mono animate-pulse text-primary/60">{t.processing}</div>
+                    <div className="text-[11px] text-primary/30">Accessing {selectedPersona} Neural Net</div>
                   </motion.div>
                 ) : currentOutput ? (
                   <motion.div
                     key={activeTab}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25 }}
                     className="h-full"
                   >
                     {activeTab === "json" ? (
-                      <pre className="text-xs text-primary/80 bg-black/40 p-4 rounded border border-primary/20 overflow-x-auto whitespace-pre">
+                      <pre className="text-xs text-primary/75 glass rounded-xl p-4 overflow-x-auto whitespace-pre leading-relaxed">
                         {currentOutput.json}
                       </pre>
                     ) : (
@@ -429,9 +412,16 @@ export default function TerminalPage() {
                     )}
                   </motion.div>
                 ) : (
-                  <div className="flex items-center justify-center h-full text-primary/20 font-display text-2xl tracking-widest uppercase">
-                    {t.awaiting}
-                  </div>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-col items-center justify-center h-full gap-3"
+                  >
+                    <div className="w-16 h-16 rounded-2xl glass border border-primary/15 flex items-center justify-center">
+                      <TerminalIcon className="w-7 h-7 text-primary/25" />
+                    </div>
+                    <span className="text-primary/20 font-display text-lg tracking-widest uppercase">{t.awaiting}</span>
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>

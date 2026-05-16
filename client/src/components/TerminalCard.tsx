@@ -10,32 +10,35 @@ interface TerminalCardProps {
 
 export function TerminalCard({ children, className, title, glow = false }: TerminalCardProps) {
   return (
-    <div 
+    <div
       className={cn(
-        "relative border border-border bg-background/80 backdrop-blur-sm overflow-hidden group",
-        glow && "shadow-[0_0_15px_rgba(57,255,20,0.15)] border-primary/50",
+        "relative rounded-2xl overflow-hidden",
+        glow ? "glass-glow" : "glass",
         className
       )}
     >
-      {/* Corner decorations */}
-      <div className="absolute top-0 left-0 w-2 h-2 border-l-2 border-t-2 border-primary z-10" />
-      <div className="absolute top-0 right-0 w-2 h-2 border-r-2 border-t-2 border-primary z-10" />
-      <div className="absolute bottom-0 left-0 w-2 h-2 border-l-2 border-b-2 border-primary z-10" />
-      <div className="absolute bottom-0 right-0 w-2 h-2 border-r-2 border-b-2 border-primary z-10" />
+      {/* Subtle top shimmer line */}
+      <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
-      {/* Header Line */}
+      {/* Header */}
       {title && (
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-secondary/50">
-          <div className="w-2 h-2 bg-primary animate-pulse" />
-          <span className="font-display text-xs tracking-widest text-primary/80 uppercase">{title}</span>
-          <div className="flex-1 h-px bg-border/50" />
-          <span className="font-mono text-[10px] text-muted-foreground">SYS.VER.3.0</span>
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-primary/10 bg-black/20">
+          <div className="flex gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full bg-primary/80 shadow-[0_0_6px_rgba(57,255,20,0.8)]" />
+            <div className="w-2.5 h-2.5 rounded-full bg-primary/30" />
+            <div className="w-2.5 h-2.5 rounded-full bg-primary/15" />
+          </div>
+          <span className="font-display text-[11px] tracking-[0.2em] text-primary/70 uppercase flex-1">{title}</span>
+          <span className="font-mono text-[10px] text-primary/25 tracking-widest">v3.0</span>
         </div>
       )}
 
       <div className="p-4 md:p-6 relative z-10 flex-1 min-h-0 overflow-hidden">
         {children}
       </div>
+
+      {/* Bottom shimmer */}
+      <div className="absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
     </div>
   );
 }
