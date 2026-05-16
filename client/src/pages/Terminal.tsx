@@ -413,19 +413,16 @@ export default function TerminalPage() {
               )}
             </AnimatePresence>
 
-            {/* Content — starts as single line, expands on content */}
-            <motion.div
-              layout
-              initial={false}
-              animate={{ minHeight: hasContent ? 260 : 36 }}
-              transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
-              className="overflow-hidden flex-1"
+            {/* Content body — fills remaining height, scrolls on overflow */}
+            <div
+              className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
+              style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(57,255,20,0.18) transparent" }}
             >
               <AnimatePresence mode="wait">
                 {generate.isPending ? (
                   <motion.div key="loading"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex flex-col items-center justify-center h-full gap-4 py-10"
+                    className="flex flex-col items-center justify-center min-h-[180px] gap-4"
                   >
                     <div className="relative w-10 h-10">
                       <div className="absolute inset-0 rounded-full border border-primary/8" />
@@ -434,7 +431,7 @@ export default function TerminalPage() {
                     </div>
                     <div className="text-[11px] font-mono animate-pulse text-primary/45">{T.processing}</div>
                     <div className="text-[10px] text-primary/22">
-                      {promptMode === "image" ? "— IMAGE SYSTEM PROMPT —" : `— ${selectedPersona} —`}
+                      {promptMode === "image" ? "— IMAGE REVERSE —" : `— ${selectedPersona} —`}
                     </div>
                   </motion.div>
 
@@ -442,7 +439,6 @@ export default function TerminalPage() {
                   <motion.div key={activeTab}
                     initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="h-full overflow-auto max-h-[calc(100vh-220px)]"
                   >
                     {activeTab === "json" ? (
                       <pre className="text-[11px] text-primary/68 glass rounded-xl p-4 overflow-x-auto whitespace-pre leading-relaxed">
@@ -459,14 +455,14 @@ export default function TerminalPage() {
 
                 ) : (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className="flex items-center justify-center gap-2 py-2"
+                    className="flex items-center justify-center gap-2 min-h-[60px]"
                   >
                     <TerminalIcon className="w-3.5 h-3.5 text-primary/16" />
                     <span className="text-primary/14 font-display text-[10px] tracking-widest uppercase">{T.awaiting}</span>
                   </motion.div>
                 )}
               </AnimatePresence>
-            </motion.div>
+            </div>
 
           </TerminalCard>
         </div>

@@ -150,9 +150,11 @@ export async function registerRoutes(
         : "";
 
       let parts: any[];
+      // isTechnical scoped here so JSON-key selection below can access it
+      const isTechnical = !isImageMode && input.promptMode === "technical";
 
       if (isImageMode) {
-        // ── IMAGE MODE: reverse engineering only ──────────────────────────────
+        // ── IMAGE MODE: IMAGE_SYSTEM_PROMPT ───────────────────────────────────
         let mimeType = "image/jpeg";
         let imageData = input.image!;
 
@@ -169,20 +171,20 @@ export async function registerRoutes(
         parts = [
           { text: IMAGE_SYSTEM_PROMPT + expertDirective },
           {
-            inlineData: {
-              mimeType,
-              data: imageData,
-            },
+            inlineData: { mimeType, data: imageData },
           },
         ];
-      } else {
-        // ── TEXT MODE: role-play OR technical ────────────────────────────────
-        const isTechnical = input.promptMode === "technical";
-        const systemPrompt = isTechnical
-          ? TECHNICAL_SYSTEM_PROMPT + expertDirective
-          : TEXT_SYSTEM_PROMPT + expertDirective + "\n\n" + (PERSONA_PROMPTS[input.persona as keyof typeof PERSONA_PROMPTS] || "");
+      } else if (isTechnical) {
+        // ── TECHNICAL MODE: TECHNICAL_SYSTEM_PROMPT ───────────────────────────
         parts = [
-          { text: systemPrompt },
+          { text: TECHNICAL_SYSTEM_PROMPT + expertDirective },
+          { text: `ورودی: ${input.idea}` },
+        ];
+      } else {
+        // ── ROLE-PLAY MODE: TEXT_SYSTEM_PROMPT + persona ─────────────────────
+        const personaPrompt = PERSONA_PROMPTS[input.persona as keyof typeof PERSONA_PROMPTS] || "";
+        parts = [
+          { text: TEXT_SYSTEM_PROMPT + expertDirective + "\n\n" + personaPrompt },
           { text: `ورودی: ${input.idea}` },
         ];
       }
@@ -204,16 +206,15 @@ export async function registerRoutes(
       // ── English translation pass ────────────────────────────────────────────
       let englishPrompt = generatedText;
       try {
+        const translationInstruction = isImageMode
+          ? `Translate the following image reconstruction prompt into professional English, keeping all section headers and technical details:\n\n${generatedText}`
+          : isTechnical
+            ? `Translate the following technical/instructional prompt into professional English, maintaining the exact 5-section format (Objective, Prerequisites, Execution Steps, Technical Notes, Expected Output):\n\n${generatedText}`
+            : `Translate the following structured prompt into professional English, maintaining the exact 5-section format (Role, Context, Task, Constraints, Output Format):\n\n${generatedText}`;
+
         const translationResponse = await ai.models.generateContent({
           model: "gemini-2.5-flash",
-          contents: [{
-            role: "user",
-            parts: [{
-              text: isImageMode
-                ? `Translate the following image analysis and reconstruction prompt into professional English, maintaining all section headers and technical details exactly:\n\n${generatedText}`
-                : `Translate the following structured prompt into professional English, maintaining the exact 5-section format (Role, Context, Task, Constraints, Output Format):\n\n${generatedText}`
-            }]
-          }],
+          contents: [{ role: "user", parts: [{ text: translationInstruction }] }],
         });
         englishPrompt = translationResponse.candidates?.[0]?.content?.parts?.[0]?.text || generatedText;
       } catch (e) {
@@ -224,20 +225,20 @@ export async function registerRoutes(
       let jsonPrompt = "{}";
       try {
         const jsonKeys = isImageMode
-          ? `"image_analysis", "reconstruction_prompt", "subject_face_protocol", "quality_requirements"`
-          : `"role", "context", "task", "constraints", "output_format"`;
+          ? `"reconstruction_prompt", "environment", "lighting", "photography_technique", "color_palette", "quality_requirements"`
+          : isTechnical
+            ? `"objective", "prerequisites", "execution_steps", "technical_notes", "expected_output"`
+            : `"role", "context", "task", "constraints", "output_format"`;
 
         const jsonResponse = await ai.models.generateContent({
           model: "gemini-2.5-flash",
           contents: [{
             role: "user",
-            parts: [{
-              text: `Convert the following prompt into a clean JSON object with keys: ${jsonKeys}. Return ONLY the raw JSON object, no markdown:\n\n${englishPrompt}`
-            }]
+            parts: [{ text: `Convert the following prompt into a clean JSON object with keys: ${jsonKeys}. Return ONLY the raw JSON object, no markdown fences:\n\n${englishPrompt}` }]
           }],
         });
         const rawJsonText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        jsonPrompt = rawJsonText.replace(/```json|```/g, "").trim();
+        jsonPrompt = rawJsonText.replace(/```json\n?|```/g, "").trim();
       } catch (e) {
         console.error("JSON conversion error:", e);
       }
