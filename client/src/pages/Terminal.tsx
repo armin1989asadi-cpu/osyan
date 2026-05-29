@@ -200,54 +200,41 @@ export default function TerminalPage() {
         <div className="lg:w-[420px] xl:w-[460px] shrink-0 flex flex-col overflow-y-auto">
           <TerminalCard title={T.neuralConfig} className="flex-1 flex flex-col">
 
-            {/* Mode selector — 3 tabs */}
-            <div className="grid grid-cols-3 gap-1 mb-2 p-1 glass rounded-xl">
+            {/* Mode selector — 3 tabs with inline description */}
+            <div className="grid grid-cols-3 gap-1 mb-3 p-1 glass rounded-xl">
               {MODE_TABS.map(({ id, icon: Icon }) => {
                 const active = promptMode === id;
                 return (
                   <button key={id} onClick={() => { setPromptMode(id); setCurrentOutput(null); }}
                     className={cn(
-                      "flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-[9px] font-bold transition-all duration-150 tracking-wide",
+                      "flex flex-col items-center justify-center gap-0.5 py-2.5 px-1.5 rounded-lg transition-all duration-150",
                       active
                         ? "bg-primary/15 border border-primary/42 text-primary shadow-[0_0_8px_rgba(57,255,20,0.12)]"
                         : "text-primary/32 hover:text-primary/62 border border-transparent hover:border-primary/12"
                     )}
                   >
-                    <Icon className="w-3 h-3 shrink-0" />
-                    {T.modes[id]}
+                    <div className="flex items-center gap-1.5">
+                      <Icon className="w-3 h-3 shrink-0" />
+                      <span className="text-[9px] font-bold tracking-wide">{T.modes[id]}</span>
+                    </div>
+                    <AnimatePresence initial={false}>
+                      {active && (
+                        <motion.span
+                          key={id}
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="text-[7px] text-primary/38 text-center leading-tight px-0.5 overflow-hidden block"
+                        >
+                          {T.modeDesc[id]}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </button>
                 );
               })}
             </div>
-
-            {/* Mode description */}
-            <p className="text-[9px] text-primary/28 text-center mb-2.5 tracking-wide leading-snug px-2">
-              {T.modeDesc[promptMode]}
-            </p>
-
-            {/* Output length selector — roleplay + technical only */}
-            {promptMode !== "image" && (
-              <div className="mb-2.5">
-                <div className="flex items-center gap-2 mb-1 px-0.5">
-                  <span className="text-[9px] text-primary/30 tracking-widest uppercase">{T.lengthLabel}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-1 p-1 glass rounded-xl">
-                  {(["short", "standard", "long"] as const).map(len => (
-                    <button key={len} onClick={() => setOutputLength(len)}
-                      data-testid={`btn-length-${len}`}
-                      className={cn(
-                        "py-1.5 text-[9px] font-bold rounded-lg tracking-wide transition-all duration-150 uppercase",
-                        outputLength === len
-                          ? "bg-primary/15 border border-primary/40 text-primary shadow-[0_0_6px_rgba(57,255,20,0.1)]"
-                          : "text-primary/32 hover:text-primary/62 border border-transparent hover:border-primary/12"
-                      )}
-                    >
-                      {T.lengths[len]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* ── Dynamic content per mode ── */}
             <div className="flex-1 flex flex-col gap-2.5">
@@ -284,6 +271,9 @@ export default function TerminalPage() {
                     {/* Expert toggle */}
                     <ExpertToggle on={isExpertMode} toggle={() => setIsExpertMode(v => !v)} label={T.expertMode} />
 
+                    {/* Output length selector */}
+                    <OutputLengthSelector value={outputLength} onChange={setOutputLength} label={T.lengthLabel} lengths={T.lengths} />
+
                     {/* Text input */}
                     <TextInput
                       value={inputIdea}
@@ -298,7 +288,7 @@ export default function TerminalPage() {
                   </motion.div>
                 )}
 
-                {/* TECHNICAL: expert + text input only */}
+                {/* TECHNICAL: expert + output length + text input */}
                 {promptMode === "technical" && (
                   <motion.div key="technical"
                     initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
@@ -306,6 +296,9 @@ export default function TerminalPage() {
                     className="flex flex-col gap-2.5"
                   >
                     <ExpertToggle on={isExpertMode} toggle={() => setIsExpertMode(v => !v)} label={T.expertMode} />
+
+                    {/* Output length selector */}
+                    <OutputLengthSelector value={outputLength} onChange={setOutputLength} label={T.lengthLabel} lengths={T.lengths} />
 
                     <TextInput
                       value={inputIdea}
@@ -501,6 +494,39 @@ export default function TerminalPage() {
 }
 
 // ── Shared sub-components ──────────────────────────────────────────────────────
+
+function OutputLengthSelector({
+  value, onChange, label, lengths,
+}: {
+  value: "short" | "standard" | "long";
+  onChange: (v: "short" | "standard" | "long") => void;
+  label: string;
+  lengths: { short: string; standard: string; long: string };
+}) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-1.5 px-0.5">
+        <div className="w-1 h-1 rounded-full bg-primary/25" />
+        <span className="text-[9px] text-primary/30 tracking-widest uppercase">{label}</span>
+      </div>
+      <div className="grid grid-cols-3 gap-1 p-1 glass rounded-xl">
+        {(["short", "standard", "long"] as const).map(len => (
+          <button key={len} onClick={() => onChange(len)}
+            data-testid={`btn-length-${len}`}
+            className={cn(
+              "py-1.5 text-[9px] font-bold rounded-lg tracking-wide transition-all duration-150 uppercase",
+              value === len
+                ? "bg-primary/15 border border-primary/40 text-primary shadow-[0_0_6px_rgba(57,255,20,0.1)]"
+                : "text-primary/32 hover:text-primary/62 border border-transparent hover:border-primary/12"
+            )}
+          >
+            {lengths[len]}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function ExpertToggle({ on, toggle, label }: { on: boolean; toggle: () => void; label: string }) {
   return (
