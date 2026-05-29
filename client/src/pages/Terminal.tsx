@@ -375,7 +375,7 @@ export default function TerminalPage() {
         <div className="hidden lg:block w-px bg-primary/8 shrink-0" />
 
         {/* ── Right panel: output ── */}
-        <div className="flex-1 flex flex-col min-w-0 mt-3 lg:mt-0">
+        <div className="flex-1 flex flex-col min-w-0 mt-3 lg:mt-0 min-h-[320px]">
           <TerminalCard title={T.outputStream} className="flex-1 flex flex-col" glow={!!currentOutput}>
 
             {/* Output tab bar */}

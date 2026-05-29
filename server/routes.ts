@@ -31,29 +31,40 @@ ABSOLUTE RULES:
 - No "Osyan protocol" or memory-reset sections — this is a pure technical/instructional prompt.
 - Every section must be dense with domain-specific, actionable detail.
 - Output language: PERSIAN (Farsi).
-- Follow the EXACT template below verbatim.
+- Follow the EXACT 6-section template below. Do NOT omit any section.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT TEMPLATE — COPY THIS STRUCTURE EXACTLY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-### هدف
-[CONTENT: State the precise technical objective. What exactly must be achieved, built, reverse-engineered, or learned? Be laser-specific — include version numbers, platform, scope, and success criteria.]
+### ۱. هدف
+[CONTENT: State the precise technical objective with laser specificity — exact goal, platform, version, scope, measurable success criteria, and the "why" behind this task. One dense paragraph minimum.]
 
-### پیش‌نیازها
-[CONTENT: List every required tool, software, library, permission, environment, or prior knowledge the user needs before starting. Be exhaustive — include download links concept, version requirements, system specs if relevant.]
+### ۲. پیش‌نیازها و دانش
+[CONTENT: Two sub-sections:
+الف) ابزار و نرم‌افزار: List every required tool, software, library, SDK, OS, hardware, or permission with exact versions.
+ب) دانش پیشین: List the specific technical knowledge, concepts, or skills the user must already possess. Be precise — not "programming knowledge" but "Python 3.10+، آشنایی با asyncio، درک مفهوم hooking".]
 
-### مراحل اجرا
-[CONTENT: Numbered step-by-step breakdown of the full process. Each step must be: specific, actionable, technically precise. Include exact commands, file paths, configuration values, flags, and parameters where applicable. Cover edge cases inline.]
+### ۳. مراحل اجرا
+[CONTENT: Numbered step-by-step breakdown. Each step: specific, actionable, technically precise. Include exact commands, code snippets, file paths, config values, flags, API calls. Cover branching logic and edge cases inline as sub-steps. Minimum 6-8 numbered steps.]
 
-### نکات فنی و هشدارها
-[CONTENT: Critical technical caveats, common failure points, security considerations, legal notes, anti-detection measures (if applicable), troubleshooting for likely errors, and pro tips for optimization.]
+### ۴. نکات فنی و هشدارها
+[CONTENT: Critical caveats organized as:
+⚠ هشدارهای امنیتی: security risks, credential exposure, sandbox escape risks
+⚠ نقاط شکست رایج: most likely failure points with exact error messages and fixes
+⚠ ملاحظات قانونی: legal/ethical scope limitations if applicable
+💡 بهینه‌سازی‌ها: performance tips, anti-detection if relevant, pro optimizations]
 
-### خروجی مورد انتظار
-[CONTENT: Describe precisely what successful completion looks like. Include expected outputs, verification steps, screenshots description, or test commands to confirm success.]
+### ۵. خروجی مورد انتظار
+[CONTENT: Describe precisely what successful completion looks like — expected files, console output, behavior changes, screenshots description, or verification commands. Include both success indicators and failure indicators.]
+
+### ۶. پرامپت منفی
+[CONTENT: Using professional negative prompt engineering principles, list what must absolutely NOT happen during this task. Format as bulleted directives:
+• هرگز [specific action to avoid] — because [technical reason]
+Include: wrong approaches that look correct but fail, dangerous shortcuts, common misconceptions, what to avoid in code/commands, behaviors that break the goal. Minimum 5-7 items. Make each item technically specific, not generic.]
 `;
 
-// ─── System prompt A: Role-play / Persona (full 5-section) ───────────────────
+// ─── System prompt A: Role-play / Persona (full 6-section) ───────────────────
 const TEXT_SYSTEM_PROMPT = `
 You are Osyan — the world's foremost AI Prompt Engineer and System Architect. Your singular mission is to transform any raw idea into the most complete, precise, professional, and high-impact AI prompt possible.
 
@@ -62,7 +73,7 @@ ABSOLUTE RULES:
 - Every section must be rich, detailed, and substantive. Never write short or vague sections.
 - Use domain-specific terminology relevant to the topic.
 - The output language is PERSIAN (Farsi).
-- Follow the EXACT template below. Copy the [FIXED TEXT] lines verbatim. Fill in the [CONTENT] sections with expert-level content.
+- Follow the EXACT 6-section template below. Copy the [FIXED TEXT] lines verbatim. Fill in the [CONTENT] sections with expert-level content.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT TEMPLATE — COPY THIS STRUCTURE EXACTLY:
@@ -89,6 +100,11 @@ OUTPUT TEMPLATE — COPY THIS STRUCTURE EXACTLY:
 
 ### فرمت خروجی
 [CONTENT: Define precisely how the AI should structure and format its responses — including length, style, tone, use of lists/headings, response structure, and any domain-specific output conventions.]
+
+### پرامپت منفی
+[CONTENT: Using professional negative prompt engineering principles, write a definitive list of what this AI persona must NEVER do, say, become, or allow. Format as bulleted directives:
+• هرگز [specific forbidden behavior] — [precise reason it breaks the role or harms the user experience]
+Include: forbidden tones, forbidden topics/content types, forbidden response patterns, character-breaking behaviors, forbidden output formats, and boundary violations specific to this role's domain. Each item must be role-specific, not generic. Minimum 6-8 items.]
 `;
 
 // ─── System prompt for IMAGE → reverse engineering + face-swap prompt ────────
@@ -207,10 +223,10 @@ export async function registerRoutes(
       let englishPrompt = generatedText;
       try {
         const translationInstruction = isImageMode
-          ? `Translate the following image reconstruction prompt into professional English, keeping all section headers and technical details:\n\n${generatedText}`
+          ? `Translate the following image reconstruction prompt into professional English. Output ONLY the translated text — no introduction, no preamble, no explanation sentence before or after:\n\n${generatedText}`
           : isTechnical
-            ? `Translate the following technical/instructional prompt into professional English, maintaining the exact 5-section format (Objective, Prerequisites, Execution Steps, Technical Notes, Expected Output):\n\n${generatedText}`
-            : `Translate the following structured prompt into professional English, maintaining the exact 5-section format (Role, Context, Task, Constraints, Output Format):\n\n${generatedText}`;
+            ? `Translate the following technical prompt into professional English, maintaining the exact 6-section structure (Objective, Prerequisites & Knowledge, Execution Steps, Technical Notes & Warnings, Expected Output, Negative Prompt). Output ONLY the translated text — no introduction, no preamble, no explanation sentence before or after:\n\n${generatedText}`
+            : `Translate the following structured prompt into professional English, maintaining the exact 6-section format (Role, Context, Task, Constraints, Output Format, Negative Prompt). Output ONLY the translated text — no introduction, no preamble, no explanation sentence before or after:\n\n${generatedText}`;
 
         const translationResponse = await ai.models.generateContent({
           model: "gemini-2.5-flash",
@@ -227,8 +243,8 @@ export async function registerRoutes(
         const jsonKeys = isImageMode
           ? `"reconstruction_prompt", "environment", "lighting", "photography_technique", "color_palette", "quality_requirements"`
           : isTechnical
-            ? `"objective", "prerequisites", "execution_steps", "technical_notes", "expected_output"`
-            : `"role", "context", "task", "constraints", "output_format"`;
+            ? `"objective", "prerequisites", "execution_steps", "technical_notes", "expected_output", "negative_prompt"`
+            : `"role", "context", "task", "constraints", "output_format", "negative_prompt"`;
 
         const jsonResponse = await ai.models.generateContent({
           model: "gemini-2.5-flash",
