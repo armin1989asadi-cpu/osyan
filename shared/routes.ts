@@ -25,6 +25,7 @@ export const api = {
         isExpertMode: z.boolean().optional(),
         image: z.string().optional(),
         promptMode: z.enum(['roleplay', 'technical']).optional(),
+        outputLength: z.enum(['short', 'standard', 'long']).optional(),
       }),
       responses: {
         200: z.custom<typeof prompts.$inferSelect>(),

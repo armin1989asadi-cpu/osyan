@@ -169,6 +169,14 @@ export async function registerRoutes(
       // isTechnical scoped here so JSON-key selection below can access it
       const isTechnical = !isImageMode && input.promptMode === "technical";
 
+      // ── Output length directive ──────────────────────────────────────────────
+      const outputLength = input.outputLength || "standard";
+      const lengthDirective = isImageMode ? "" : outputLength === "short"
+        ? "\n\nقانون طول خروجی — کوتاه: هر بخش را در ۲ تا ۴ جمله‌ی کوتاه بنویس. ساختار و عناوین بخش‌ها را کاملاً حفظ کن اما توضیحات را به حداقل برسان. هیچ مثال اضافه، شرح تکراری یا جمله‌ی پرکننده نداشته باش."
+        : outputLength === "long"
+          ? "\n\nقانون طول خروجی — بلند: هر بخش را با حداکثر عمق و جزئیات بنویس. برای هر مفهوم مثال دقیق بیاور، تمام جزئیات فنی را پوشش بده و هیچ چیز را خلاصه نکن. متن باید بسیار جامع، کامل و تخصصی باشد."
+          : "\n\nقانون طول خروجی — استاندارد: هر بخش کامل، دقیق و بدون توضیحات تکراری یا اضافه باشد. تعادل بین جامعیت و اختصار را رعایت کن. هر نکته‌ی مهم پوشش داده شود ولی از پُرگویی پرهیز شود.";
+
       if (isImageMode) {
         // ── IMAGE MODE: IMAGE_SYSTEM_PROMPT ───────────────────────────────────
         let mimeType = "image/jpeg";
@@ -193,14 +201,14 @@ export async function registerRoutes(
       } else if (isTechnical) {
         // ── TECHNICAL MODE: TECHNICAL_SYSTEM_PROMPT ───────────────────────────
         parts = [
-          { text: TECHNICAL_SYSTEM_PROMPT + expertDirective },
+          { text: TECHNICAL_SYSTEM_PROMPT + expertDirective + lengthDirective },
           { text: `ورودی: ${input.idea}` },
         ];
       } else {
         // ── ROLE-PLAY MODE: TEXT_SYSTEM_PROMPT + persona ─────────────────────
         const personaPrompt = PERSONA_PROMPTS[input.persona as keyof typeof PERSONA_PROMPTS] || "";
         parts = [
-          { text: TEXT_SYSTEM_PROMPT + expertDirective + "\n\n" + personaPrompt },
+          { text: TEXT_SYSTEM_PROMPT + expertDirective + lengthDirective + "\n\n" + personaPrompt },
           { text: `ورودی: ${input.idea}` },
         ];
       }

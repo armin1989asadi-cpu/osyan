@@ -43,6 +43,8 @@ export default function TerminalPage() {
   } | null>(null);
   const [activeTab, setActiveTab] = useState<"original" | "english" | "json">("original");
 
+  const [outputLength, setOutputLength] = useState<"short" | "standard" | "long">("standard");
+
   const generate = useGeneratePrompt();
   const history  = usePromptsHistory();
 
@@ -61,10 +63,9 @@ export default function TerminalPage() {
         persona:      selectedPersona,
         idea:         isImg ? "Reverse Image Analysis" : inputIdea,
         isExpertMode,
-        // image field presence tells server to use IMAGE_SYSTEM_PROMPT
         image:        isImg ? selectedImage! : undefined,
-        // promptMode only matters for text modes
         promptMode:   isImg ? undefined : promptMode,
+        outputLength: isImg ? undefined : outputLength,
       } as any);
       setCurrentOutput({
         original: result.generatedPrompt,
@@ -98,6 +99,8 @@ export default function TerminalPage() {
         technical: "Instructional / reverse-engineering prompt",
         image:     "Reverse image engineering prompt",
       },
+      lengths: { short: "کوتاه", standard: "استاندارد", long: "بلند" },
+      lengthLabel: "طول خروجی",
     },
     fa: {
       status: "آنلاین", logs: "لاگ", opLogs: "گزارش", neuralConfig: "پیکربندی",
@@ -112,6 +115,8 @@ export default function TerminalPage() {
         technical: "پرامپت آموزشی / مهندسی معکوس نرم‌افزار",
         image:     "پرامپت مهندسی معکوس تصویر",
       },
+      lengths: { short: "کوتاه", standard: "استاندارد", long: "بلند" },
+      lengthLabel: "طول خروجی",
     },
   }[language];
 
@@ -123,7 +128,7 @@ export default function TerminalPage() {
 
   return (
     <div className={cn(
-      "h-screen bg-background text-foreground font-mono relative overflow-hidden flex flex-col",
+      "min-h-screen lg:h-screen bg-background text-foreground font-mono relative overflow-x-hidden flex flex-col",
       language === "fa" && "rtl"
     )}>
       <MatrixBackground />
@@ -189,7 +194,7 @@ export default function TerminalPage() {
       </header>
 
       {/* ── Main — flex row, zero gap between panels ── */}
-      <main className="relative z-10 flex-1 flex flex-col lg:flex-row overflow-hidden p-3 md:p-4 gap-0">
+      <main className="relative z-10 flex-1 flex flex-col lg:flex-row lg:overflow-hidden p-3 md:p-4 gap-0">
 
         {/* ── Left panel: controls ── */}
         <div className="lg:w-[420px] xl:w-[460px] shrink-0 flex flex-col overflow-y-auto">
@@ -216,9 +221,33 @@ export default function TerminalPage() {
             </div>
 
             {/* Mode description */}
-            <p className="text-[9px] text-primary/28 text-center mb-3 tracking-wide leading-snug px-2">
+            <p className="text-[9px] text-primary/28 text-center mb-2.5 tracking-wide leading-snug px-2">
               {T.modeDesc[promptMode]}
             </p>
+
+            {/* Output length selector — roleplay + technical only */}
+            {promptMode !== "image" && (
+              <div className="mb-2.5">
+                <div className="flex items-center gap-2 mb-1 px-0.5">
+                  <span className="text-[9px] text-primary/30 tracking-widest uppercase">{T.lengthLabel}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1 p-1 glass rounded-xl">
+                  {(["short", "standard", "long"] as const).map(len => (
+                    <button key={len} onClick={() => setOutputLength(len)}
+                      data-testid={`btn-length-${len}`}
+                      className={cn(
+                        "py-1.5 text-[9px] font-bold rounded-lg tracking-wide transition-all duration-150 uppercase",
+                        outputLength === len
+                          ? "bg-primary/15 border border-primary/40 text-primary shadow-[0_0_6px_rgba(57,255,20,0.1)]"
+                          : "text-primary/32 hover:text-primary/62 border border-transparent hover:border-primary/12"
+                      )}
+                    >
+                      {T.lengths[len]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ── Dynamic content per mode ── */}
             <div className="flex-1 flex flex-col gap-2.5">
