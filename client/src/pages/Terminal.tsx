@@ -99,8 +99,8 @@ export default function TerminalPage() {
         technical: "Instructional / reverse-engineering prompt",
         image:     "Reverse image engineering prompt",
       },
-      lengths: { short: "کوتاه", standard: "استاندارد", long: "بلند" },
-      lengthLabel: "طول خروجی",
+      lengths: { short: "SHORT", standard: "STANDARD", long: "LONG" },
+      lengthLabel: "OUTPUT LENGTH",
     },
     fa: {
       status: "آنلاین", logs: "لاگ", opLogs: "گزارش", neuralConfig: "پیکربندی",
@@ -368,8 +368,8 @@ export default function TerminalPage() {
                           exit={{ opacity: 0 }} transition={{ duration: 0.18 }}
                           className="flex flex-col gap-2.5"
                         >
-                          <div className="relative rounded-xl overflow-hidden border border-primary/22 group aspect-video">
-                            <img src={selectedImage} className="w-full h-full object-cover" />
+                          <div className="relative rounded-xl overflow-hidden border border-primary/22 group max-h-[220px] flex items-center justify-center bg-black/30">
+                            <img src={selectedImage} className="w-full h-full object-contain max-h-[220px]" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                               <button onClick={() => setSelectedImage(null)}
