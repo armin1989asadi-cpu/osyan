@@ -1,10 +1,11 @@
 import { db } from "./db";
 import { prompts, type InsertPrompt, type Prompt } from "@shared/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export interface IStorage {
   createPrompt(prompt: InsertPrompt): Promise<Prompt>;
   getPrompts(): Promise<Prompt[]>;
+  getPromptById(id: number): Promise<Prompt | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -15,6 +16,11 @@ export class DatabaseStorage implements IStorage {
 
   async getPrompts(): Promise<Prompt[]> {
     return await db.select().from(prompts).orderBy(desc(prompts.createdAt));
+  }
+
+  async getPromptById(id: number): Promise<Prompt | undefined> {
+    const [prompt] = await db.select().from(prompts).where(eq(prompts.id, id));
+    return prompt;
   }
 }
 

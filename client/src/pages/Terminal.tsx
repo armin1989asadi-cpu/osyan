@@ -11,11 +11,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   History, Terminal as TerminalIcon, Cpu, ShieldAlert, Sparkles,
-  BrainCircuit, Users, Wrench, ScanSearch,
+  BrainCircuit, Users, Wrench, ScanSearch, QrCode, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
+import QRCode from "react-qr-code";
 
 const AI_APPS = [
   { name: "ChatGPT",    label: "GPT", url: "https://chatgpt.com/",          color: "#10a37f" },
@@ -111,8 +112,9 @@ export default function TerminalPage() {
   const [promptMode, setPromptMode]   = useState<PromptMode>("roleplay");
   const [language, setLanguage]       = useState<"en" | "fa">("en");
   const [currentOutput, setCurrentOutput] = useState<{
-    original: string; english?: string; json?: string
+    original: string; english?: string; json?: string; id?: number
   } | null>(null);
+  const [showQR, setShowQR] = useState(false);
   const [activeTab, setActiveTab] = useState<"original" | "english" | "json">("original");
 
   const [outputLength, setOutputLength] = useState<"short" | "standard" | "long">("standard");
@@ -144,6 +146,7 @@ export default function TerminalPage() {
         original: result.generatedPrompt,
         english:  result.englishPrompt || result.generatedPrompt,
         json:     result.jsonPrompt    || "{}",
+        id:       result.id,
       });
       setActiveTab("original");
     } catch (err) {
@@ -154,8 +157,9 @@ export default function TerminalPage() {
   const loadHistoryItem = (item: any) => {
     setInputIdea(item.inputIdea);
     setSelectedPersona(item.persona as any);
-    setCurrentOutput({ original: item.generatedPrompt, english: item.englishPrompt, json: item.jsonPrompt });
+    setCurrentOutput({ original: item.generatedPrompt, english: item.englishPrompt, json: item.jsonPrompt, id: item.id });
     setActiveTab("original");
+    setShowQR(false);
   };
 
   const T = {
@@ -482,7 +486,7 @@ export default function TerminalPage() {
                   transition={{ duration: 0.2 }}
                   className="space-y-2 overflow-hidden"
                 >
-                  {/* Row 1: tabs + copy */}
+                  {/* Row 1: tabs + copy + qr */}
                   <div className="flex items-center justify-between border-b border-primary/8 pb-2">
                     <div className="flex gap-1">
                       {(["original", "english", "json"] as const).map(tab => (
@@ -498,19 +502,78 @@ export default function TerminalPage() {
                         </button>
                       ))}
                     </div>
-                    <button
-                      className={cn(
-                        "px-2.5 py-1 text-[9px] glass rounded-lg border transition-all uppercase tracking-wider",
-                        copied ? "border-primary/40 text-primary" : "border-primary/10 text-primary/38 hover:text-primary/75 hover:border-primary/28"
+                    <div className="flex items-center gap-1">
+                      {currentOutput.id && (
+                        <button
+                          className={cn(
+                            "px-2.5 py-1 text-[9px] glass rounded-lg border transition-all uppercase tracking-wider flex items-center gap-1",
+                            showQR ? "border-primary/40 text-primary bg-primary/8" : "border-primary/10 text-primary/38 hover:text-primary/75 hover:border-primary/28"
+                          )}
+                          onClick={() => setShowQR(v => !v)}
+                          title="QR Code"
+                        >
+                          <QrCode className="w-3 h-3" />
+                          QR
+                        </button>
                       )}
-                      onClick={() => {
-                        const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
-                        navigator.clipboard.writeText(text || "");
-                        setCopied(true);
-                        setTimeout(() => setCopied(false), 1800);
-                      }}
-                    >{copied ? T.copied : T.copy}</button>
+                      <button
+                        className={cn(
+                          "px-2.5 py-1 text-[9px] glass rounded-lg border transition-all uppercase tracking-wider",
+                          copied ? "border-primary/40 text-primary" : "border-primary/10 text-primary/38 hover:text-primary/75 hover:border-primary/28"
+                        )}
+                        onClick={() => {
+                          const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
+                          navigator.clipboard.writeText(text || "");
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 1800);
+                        }}
+                      >{copied ? T.copied : T.copy}</button>
+                    </div>
                   </div>
+
+                  {/* QR Code Panel */}
+                  <AnimatePresence>
+                    {showQR && currentOutput.id && (
+                      <motion.div
+                        key="qr-panel"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex items-center gap-4 p-3 glass rounded-xl border border-primary/10 mb-1">
+                          <div className="p-2 bg-white rounded-lg shrink-0">
+                            <QRCode
+                              value={`${window.location.origin}/share/${currentOutput.id}`}
+                              size={88}
+                              bgColor="#ffffff"
+                              fgColor="#000000"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1.5 min-w-0">
+                            <span className="text-[8px] text-primary/35 uppercase tracking-widest font-bold">SHARE PROMPT</span>
+                            <p className="text-[9px] text-primary/50 leading-relaxed">
+                              با گوشی این کد را اسکن کنید تا مستقیم به خروجی دسترسی پیدا کنید
+                            </p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="text-[8px] text-primary/22 font-mono truncate">
+                                {window.location.origin}/share/{currentOutput.id}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/share/${currentOutput.id}`);
+                              }}
+                              className="self-start text-[8px] border border-primary/15 text-primary/40 hover:text-primary/75 hover:border-primary/35 rounded px-2 py-0.5 transition-all uppercase tracking-wider mt-0.5"
+                            >
+                              COPY LINK
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Row 2: Send to AI — simple inline strip */}
                   <div className="flex items-center gap-1.5 pb-2 border-b border-primary/6">

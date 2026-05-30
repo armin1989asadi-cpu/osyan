@@ -351,5 +351,13 @@ export async function registerRoutes(
     res.json(prompts);
   });
 
+  app.get("/api/prompts/:id", async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: "Invalid ID" });
+    const prompt = await storage.getPromptById(id);
+    if (!prompt) return res.status(404).json({ message: "Prompt not found" });
+    res.json(prompt);
+  });
+
   return httpServer;
 }

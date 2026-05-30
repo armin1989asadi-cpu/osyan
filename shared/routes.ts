@@ -40,6 +40,14 @@ export const api = {
         200: z.array(z.custom<typeof prompts.$inferSelect>()),
       },
     },
+    getById: {
+      method: 'GET' as const,
+      path: '/api/prompts/:id',
+      responses: {
+        200: z.custom<typeof prompts.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
   },
 };
 
