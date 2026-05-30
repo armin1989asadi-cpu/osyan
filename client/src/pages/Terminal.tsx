@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useGeneratePrompt, usePromptsHistory } from "@/hooks/use-prompts";
 import { MatrixBackground } from "@/components/MatrixBackground";
 import { CRTEffect } from "@/components/CRTEffect";
@@ -11,11 +11,20 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   History, Terminal as TerminalIcon, Cpu, ShieldAlert, Sparkles,
-  BrainCircuit, ImageIcon, Users, Wrench, ScanSearch,
+  BrainCircuit, Users, Wrench, ScanSearch, ExternalLink,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
+
+const AI_APPS = [
+  { name: "ChatGPT",    label: "GPT",     url: "https://chatgpt.com/",              color: "#10a37f" },
+  { name: "Gemini",     label: "GEM",     url: "https://gemini.google.com/",        color: "#4285f4" },
+  { name: "Claude",     label: "CLD",     url: "https://claude.ai/",               color: "#d97706" },
+  { name: "Grok",       label: "GRK",     url: "https://x.com/i/grok",             color: "#e5e7eb" },
+  { name: "Mistral",    label: "MST",     url: "https://chat.mistral.ai/",         color: "#f97316" },
+  { name: "Perplexity", label: "PPX",     url: "https://www.perplexity.ai/",       color: "#9333ea" },
+] as const;
 
 const PERSONAS = [
   { id: "Gemini",   icon: Sparkles },
@@ -45,11 +54,13 @@ export default function TerminalPage() {
 
   const [outputLength, setOutputLength] = useState<"short" | "standard" | "long">("standard");
 
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   const generate = useGeneratePrompt();
   const history  = usePromptsHistory();
 
   const inputIsPersian = hasPersian(inputIdea);
-  const hasContent     = !!currentOutput || generate.isPending;
 
   // ── Generate — route to correct backend mode ──────────────────────────────
   const handleGenerate = async () => {
@@ -64,9 +75,9 @@ export default function TerminalPage() {
         idea:         isImg ? "Reverse Image Analysis" : inputIdea,
         isExpertMode,
         image:        isImg ? selectedImage! : undefined,
-        promptMode:   isImg ? undefined : promptMode,
+        promptMode:   isImg ? undefined : (promptMode as "roleplay" | "technical"),
         outputLength: isImg ? undefined : outputLength,
-      } as any);
+      });
       setCurrentOutput({
         original: result.generatedPrompt,
         english:  result.englishPrompt || result.generatedPrompt,
@@ -92,7 +103,7 @@ export default function TerminalPage() {
       inputVector: "Directive", chars: "ch", placeholder: "Enter raw directive...",
       execute: "EXECUTE", processing: "PROCESSING...",
       outputStream: "OUTPUT STREAM", original: "FA", english: "EN", json: "JSON",
-      awaiting: "AWAITING INPUT", copy: "COPY",
+      awaiting: "AWAITING INPUT", copy: "COPY", share: "SEND TO AI", copied: "COPIED!",
       modes: { roleplay: "ROLE-PLAY", technical: "TECHNICAL", image: "IMAGE" },
       modeDesc: {
         roleplay:  "Persona-based role-play prompt",
@@ -108,7 +119,7 @@ export default function TerminalPage() {
       inputVector: "دستور", chars: "ک", placeholder: "دستور خام را وارد کنید...",
       execute: "اجرا", processing: "پردازش...",
       outputStream: "خروجی", original: "FA", english: "EN", json: "JSON",
-      awaiting: "در انتظار", copy: "کپی",
+      awaiting: "در انتظار", copy: "کپی", share: "ارسال به AI", copied: "کپی شد!",
       modes: { roleplay: "نقش‌آفرینی", technical: "فنی", image: "تصویر" },
       modeDesc: {
         roleplay:  "پرامپت شخصیت‌محور با قوانین نقش‌آفرینی",
@@ -424,13 +435,43 @@ export default function TerminalPage() {
                       </button>
                     ))}
                   </div>
-                  <button
-                    className="px-2.5 py-1 text-[9px] glass rounded-lg border border-primary/10 text-primary/38 hover:text-primary/75 hover:border-primary/28 transition-all uppercase tracking-wider"
-                    onClick={() => {
-                      const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
-                      navigator.clipboard.writeText(text || "");
-                    }}
-                  >{T.copy}</button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      className={cn(
+                        "px-2.5 py-1 text-[9px] glass rounded-lg border transition-all uppercase tracking-wider",
+                        copied
+                          ? "border-primary/40 text-primary"
+                          : "border-primary/10 text-primary/38 hover:text-primary/75 hover:border-primary/28"
+                      )}
+                      onClick={() => {
+                        const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
+                        navigator.clipboard.writeText(text || "");
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 1800);
+                      }}
+                    >{copied ? T.copied : T.copy}</button>
+
+                    <div className="relative">
+                      <button
+                        onClick={() => setShareOpen(v => !v)}
+                        className="flex items-center gap-1 px-2.5 py-1 text-[9px] glass rounded-lg border border-primary/10 text-primary/38 hover:text-primary/75 hover:border-primary/28 transition-all uppercase tracking-wider"
+                      >
+                        <ExternalLink className="w-2.5 h-2.5" />
+                        {T.share}
+                      </button>
+                      <AnimatePresence>
+                        {shareOpen && (
+                          <ShareDropdown
+                            onClose={() => setShareOpen(false)}
+                            getText={() => {
+                              const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
+                              return text || "";
+                            }}
+                          />
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -494,6 +535,55 @@ export default function TerminalPage() {
 }
 
 // ── Shared sub-components ──────────────────────────────────────────────────────
+
+function ShareDropdown({ onClose, getText }: { onClose: () => void; getText: () => string }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  const handleOpen = (url: string) => {
+    navigator.clipboard.writeText(getText());
+    window.open(url, "_blank", "noopener,noreferrer");
+    onClose();
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: -6, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -6, scale: 0.97 }}
+      transition={{ duration: 0.14 }}
+      className="absolute bottom-full right-0 mb-1.5 z-50 glass-strong border border-primary/18 rounded-xl p-1.5 min-w-[160px] shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+    >
+      <div className="text-[8px] text-primary/28 uppercase tracking-widest px-2 py-1 mb-0.5">
+        Copy &amp; Open →
+      </div>
+      {AI_APPS.map(app => (
+        <button
+          key={app.name}
+          onClick={() => handleOpen(app.url)}
+          className="flex items-center gap-2.5 w-full px-2 py-1.5 rounded-lg text-[10px] font-bold text-primary/45 hover:text-primary hover:bg-primary/6 transition-all duration-100 group"
+        >
+          <span
+            className="w-5 h-5 rounded-md flex items-center justify-center text-[7px] font-black shrink-0 transition-opacity"
+            style={{ backgroundColor: app.color + "22", color: app.color, border: `1px solid ${app.color}33` }}
+          >
+            {app.label}
+          </span>
+          <span className="tracking-wide">{app.name}</span>
+          <ExternalLink className="w-2.5 h-2.5 ml-auto opacity-0 group-hover:opacity-40 transition-opacity" />
+        </button>
+      ))}
+    </motion.div>
+  );
+}
 
 function OutputLengthSelector({
   value, onChange, label, lengths,
