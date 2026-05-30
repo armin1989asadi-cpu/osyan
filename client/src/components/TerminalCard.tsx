@@ -29,7 +29,7 @@ export function TerminalCard({ children, className, title, glow = false }: Termi
             <div className="w-2.5 h-2.5 rounded-full bg-primary/15" />
           </div>
           <span className="font-display text-[11px] tracking-[0.2em] text-primary/70 uppercase flex-1">{title}</span>
-          <span className="font-mono text-[10px] text-primary/25 tracking-widest">v3.0</span>
+          <span className="font-mono text-[10px] text-primary/25 tracking-widest">v2.0</span>
         </div>
       )}
 

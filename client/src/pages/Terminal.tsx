@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useGeneratePrompt, usePromptsHistory } from "@/hooks/use-prompts";
 import { MatrixBackground } from "@/components/MatrixBackground";
 import { CRTEffect } from "@/components/CRTEffect";
@@ -11,20 +11,50 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   History, Terminal as TerminalIcon, Cpu, ShieldAlert, Sparkles,
-  BrainCircuit, Users, Wrench, ScanSearch, ExternalLink,
+  BrainCircuit, Users, Wrench, ScanSearch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 
 const AI_APPS = [
-  { name: "ChatGPT",    label: "GPT",     url: "https://chatgpt.com/",              color: "#10a37f" },
-  { name: "Gemini",     label: "GEM",     url: "https://gemini.google.com/",        color: "#4285f4" },
-  { name: "Claude",     label: "CLD",     url: "https://claude.ai/",               color: "#d97706" },
-  { name: "Grok",       label: "GRK",     url: "https://x.com/i/grok",             color: "#e5e7eb" },
-  { name: "Mistral",    label: "MST",     url: "https://chat.mistral.ai/",         color: "#f97316" },
-  { name: "Perplexity", label: "PPX",     url: "https://www.perplexity.ai/",       color: "#9333ea" },
+  { name: "ChatGPT",    label: "GPT", url: "https://chatgpt.com/",          color: "#10a37f" },
+  { name: "Gemini",     label: "GEM", url: "https://gemini.google.com/",    color: "#4285f4" },
+  { name: "Claude",     label: "CLD", url: "https://claude.ai/",            color: "#d97706" },
+  { name: "Grok",       label: "GRK", url: "https://x.com/i/grok",          color: "#e5e7eb" },
+  { name: "Mistral",    label: "MST", url: "https://chat.mistral.ai/",      color: "#f97316" },
+  { name: "Perplexity", label: "PPX", url: "https://www.perplexity.ai/",    color: "#9333ea" },
 ] as const;
+
+// ── Extract negative prompt section from text ─────────────────────────────────
+function splitNegativePrompt(text: string): { main: string; negative: string | null } {
+  // Matches: ### 6. پرامپت منفی / ### ۷. پرامپت منفی / ### Negative Prompt / etc.
+  const regex = /###\s*[\d۰-۹]*\.?\s*(پرامپت منفی|Negative Prompt)\s*/i;
+  const match = regex.exec(text);
+  if (!match) return { main: text, negative: null };
+  const idx = match.index;
+  return {
+    main: text.slice(0, idx).trimEnd(),
+    negative: text.slice(idx + match[0].length).trim(),
+  };
+}
+
+// ── Extract negative_prompt from JSON string ──────────────────────────────────
+function splitJsonNegative(jsonStr: string): { mainJson: string; negative: string | null } {
+  try {
+    const obj = JSON.parse(jsonStr);
+    if (!obj.negative_prompt) return { mainJson: jsonStr, negative: null };
+    const { negative_prompt, ...rest } = obj;
+    return {
+      mainJson: JSON.stringify(rest, null, 2),
+      negative: typeof negative_prompt === "string"
+        ? negative_prompt
+        : JSON.stringify(negative_prompt, null, 2),
+    };
+  } catch {
+    return { mainJson: jsonStr, negative: null };
+  }
+}
 
 const PERSONAS = [
   { id: "Gemini",   icon: Sparkles },
@@ -53,9 +83,8 @@ export default function TerminalPage() {
   const [activeTab, setActiveTab] = useState<"original" | "english" | "json">("original");
 
   const [outputLength, setOutputLength] = useState<"short" | "standard" | "long">("standard");
-
-  const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedNeg, setCopiedNeg] = useState(false);
 
   const generate = useGeneratePrompt();
   const history  = usePromptsHistory();
@@ -419,29 +448,28 @@ export default function TerminalPage() {
                   animate={{ opacity: 1, height: "auto", marginBottom: 8 }}
                   exit={{ opacity: 0, height: 0, marginBottom: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="flex items-center justify-between border-b border-primary/8 pb-2 overflow-hidden"
+                  className="space-y-2 overflow-hidden"
                 >
-                  <div className="flex gap-1">
-                    {(["original", "english", "json"] as const).map(tab => (
-                      <button key={tab} onClick={() => setActiveTab(tab)}
-                        className={cn(
-                          "px-2.5 py-1 text-[9px] font-bold rounded-lg tracking-wider uppercase transition-all duration-150",
-                          activeTab === tab
-                            ? "bg-primary/16 text-primary border border-primary/32 shadow-[0_0_7px_rgba(57,255,20,0.1)]"
-                            : "text-primary/25 hover:text-primary/55 hover:bg-primary/4 border border-transparent"
-                        )}
-                      >
-                        {tab === "original" ? T.original : tab === "english" ? T.english : T.json}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-1">
+                  {/* Row 1: tabs + copy */}
+                  <div className="flex items-center justify-between border-b border-primary/8 pb-2">
+                    <div className="flex gap-1">
+                      {(["original", "english", "json"] as const).map(tab => (
+                        <button key={tab} onClick={() => setActiveTab(tab)}
+                          className={cn(
+                            "px-2.5 py-1 text-[9px] font-bold rounded-lg tracking-wider uppercase transition-all duration-150",
+                            activeTab === tab
+                              ? "bg-primary/16 text-primary border border-primary/32 shadow-[0_0_7px_rgba(57,255,20,0.1)]"
+                              : "text-primary/25 hover:text-primary/55 hover:bg-primary/4 border border-transparent"
+                          )}
+                        >
+                          {tab === "original" ? T.original : tab === "english" ? T.english : T.json}
+                        </button>
+                      ))}
+                    </div>
                     <button
                       className={cn(
                         "px-2.5 py-1 text-[9px] glass rounded-lg border transition-all uppercase tracking-wider",
-                        copied
-                          ? "border-primary/40 text-primary"
-                          : "border-primary/10 text-primary/38 hover:text-primary/75 hover:border-primary/28"
+                        copied ? "border-primary/40 text-primary" : "border-primary/10 text-primary/38 hover:text-primary/75 hover:border-primary/28"
                       )}
                       onClick={() => {
                         const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
@@ -450,26 +478,27 @@ export default function TerminalPage() {
                         setTimeout(() => setCopied(false), 1800);
                       }}
                     >{copied ? T.copied : T.copy}</button>
+                  </div>
 
-                    <div className="relative">
-                      <button
-                        onClick={() => setShareOpen(v => !v)}
-                        className="flex items-center gap-1 px-2.5 py-1 text-[9px] glass rounded-lg border border-primary/10 text-primary/38 hover:text-primary/75 hover:border-primary/28 transition-all uppercase tracking-wider"
-                      >
-                        <ExternalLink className="w-2.5 h-2.5" />
-                        {T.share}
-                      </button>
-                      <AnimatePresence>
-                        {shareOpen && (
-                          <ShareDropdown
-                            onClose={() => setShareOpen(false)}
-                            getText={() => {
-                              const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
-                              return text || "";
-                            }}
-                          />
-                        )}
-                      </AnimatePresence>
+                  {/* Row 2: Send to AI — simple inline strip */}
+                  <div className="flex items-center gap-1.5 pb-2 border-b border-primary/6">
+                    <span className="text-[8px] text-primary/20 uppercase tracking-widest shrink-0">{T.share} →</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {AI_APPS.map(app => (
+                        <button
+                          key={app.name}
+                          title={app.name}
+                          onClick={() => {
+                            const text = activeTab === "original" ? currentOutput.original : activeTab === "english" ? currentOutput.english : currentOutput.json;
+                            navigator.clipboard.writeText(text || "");
+                            window.open(app.url, "_blank", "noopener,noreferrer");
+                          }}
+                          className="px-2 py-0.5 rounded-md text-[8px] font-black tracking-wider transition-all duration-100 hover:opacity-90 hover:scale-105"
+                          style={{ backgroundColor: app.color + "18", color: app.color, border: `1px solid ${app.color}30` }}
+                        >
+                          {app.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </motion.div>
@@ -502,18 +531,43 @@ export default function TerminalPage() {
                   <motion.div key={activeTab}
                     initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
+                    className="space-y-3"
                   >
-                    {activeTab === "json" ? (
-                      <pre className="text-[11px] text-primary/68 glass rounded-xl p-4 overflow-x-auto whitespace-pre leading-relaxed">
-                        {currentOutput.json}
-                      </pre>
-                    ) : (
-                      <TypewriterOutput
-                        text={activeTab === "english"
-                          ? (currentOutput.english || currentOutput.original)
-                          : currentOutput.original}
-                      />
-                    )}
+                    {(() => {
+                      if (activeTab === "json") {
+                        const { mainJson, negative } = splitJsonNegative(currentOutput.json || "{}");
+                        return (
+                          <>
+                            <pre className="text-[11px] text-primary/68 glass rounded-xl p-4 overflow-x-auto whitespace-pre leading-relaxed">
+                              {mainJson}
+                            </pre>
+                            {negative && (
+                              <NegativePromptBox
+                                text={negative}
+                                copied={copiedNeg}
+                                onCopy={() => { navigator.clipboard.writeText(negative); setCopiedNeg(true); setTimeout(() => setCopiedNeg(false), 1800); }}
+                              />
+                            )}
+                          </>
+                        );
+                      }
+                      const rawText = activeTab === "english"
+                        ? (currentOutput.english || currentOutput.original)
+                        : currentOutput.original;
+                      const { main, negative } = splitNegativePrompt(rawText);
+                      return (
+                        <>
+                          <TypewriterOutput text={main} />
+                          {negative && (
+                            <NegativePromptBox
+                              text={negative}
+                              copied={copiedNeg}
+                              onCopy={() => { navigator.clipboard.writeText(negative); setCopiedNeg(true); setTimeout(() => setCopiedNeg(false), 1800); }}
+                            />
+                          )}
+                        </>
+                      );
+                    })()}
                   </motion.div>
 
                 ) : (
@@ -536,51 +590,39 @@ export default function TerminalPage() {
 
 // ── Shared sub-components ──────────────────────────────────────────────────────
 
-function ShareDropdown({ onClose, getText }: { onClose: () => void; getText: () => string }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [onClose]);
-
-  const handleOpen = (url: string) => {
-    navigator.clipboard.writeText(getText());
-    window.open(url, "_blank", "noopener,noreferrer");
-    onClose();
-  };
-
+function NegativePromptBox({ text, copied, onCopy }: { text: string; copied: boolean; onCopy: () => void }) {
+  const hasPersian = /[\u0600-\u06FF]/.test(text);
   return (
     <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: -6, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -6, scale: 0.97 }}
-      transition={{ duration: 0.14 }}
-      className="absolute bottom-full right-0 mb-1.5 z-50 glass-strong border border-primary/18 rounded-xl p-1.5 min-w-[160px] shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="rounded-xl border border-red-500/12 bg-red-950/8 p-3 space-y-2"
     >
-      <div className="text-[8px] text-primary/28 uppercase tracking-widest px-2 py-1 mb-0.5">
-        Copy &amp; Open →
-      </div>
-      {AI_APPS.map(app => (
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-red-400/50" />
+          <span className="text-[8px] text-red-400/50 uppercase tracking-widest font-bold">NEGATIVE PROMPT</span>
+        </div>
         <button
-          key={app.name}
-          onClick={() => handleOpen(app.url)}
-          className="flex items-center gap-2.5 w-full px-2 py-1.5 rounded-lg text-[10px] font-bold text-primary/45 hover:text-primary hover:bg-primary/6 transition-all duration-100 group"
+          onClick={onCopy}
+          className={cn(
+            "px-2 py-0.5 text-[8px] rounded-md border transition-all uppercase tracking-wider",
+            copied ? "border-red-400/40 text-red-400/70" : "border-red-500/12 text-red-400/30 hover:border-red-400/28 hover:text-red-400/55"
+          )}
         >
-          <span
-            className="w-5 h-5 rounded-md flex items-center justify-center text-[7px] font-black shrink-0 transition-opacity"
-            style={{ backgroundColor: app.color + "22", color: app.color, border: `1px solid ${app.color}33` }}
-          >
-            {app.label}
-          </span>
-          <span className="tracking-wide">{app.name}</span>
-          <ExternalLink className="w-2.5 h-2.5 ml-auto opacity-0 group-hover:opacity-40 transition-opacity" />
+          {copied ? "COPIED!" : "COPY"}
         </button>
-      ))}
+      </div>
+      <div
+        dir={hasPersian ? "rtl" : "ltr"}
+        className={cn(
+          "font-mono text-[11px] text-red-300/55 whitespace-pre-wrap leading-relaxed",
+          hasPersian ? "text-right" : "text-left"
+        )}
+      >
+        {text}
+      </div>
     </motion.div>
   );
 }
