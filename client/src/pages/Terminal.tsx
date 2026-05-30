@@ -66,6 +66,39 @@ const PERSONAS = [
 
 const hasPersian = (t: string) => /[\u0600-\u06FF]/.test(t);
 
+// ── Resize & compress image before sending to server ─────────────────────────
+function resizeImageToBase64(file: File, maxDim = 1024, quality = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onloadend = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width >= height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("Canvas not supported")); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 // Three separate modes — each uses a completely different backend system prompt
 type PromptMode = "roleplay" | "technical" | "image";
 
@@ -388,10 +421,9 @@ export default function TerminalPage() {
                               const file = e.target.files?.[0];
                               if (!file) return;
                               setIsImageLoading(true);
-                              const reader = new FileReader();
-                              reader.onloadend = () => { setSelectedImage(reader.result as string); setIsImageLoading(false); };
-                              reader.onerror   = () => setIsImageLoading(false);
-                              reader.readAsDataURL(file);
+                              resizeImageToBase64(file)
+                                .then(dataUrl => { setSelectedImage(dataUrl); setIsImageLoading(false); })
+                                .catch(() => setIsImageLoading(false));
                             }}
                           />
                         </motion.label>

@@ -183,6 +183,30 @@ const IMAGE_SYSTEM_PROMPT = `
 `;
 
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function extractBetween(text: string, startMarker: string, endMarker: string): string | null {
+  const start = text.indexOf(startMarker);
+  if (start === -1) return null;
+  const contentStart = start + startMarker.length;
+  const end = text.indexOf(endMarker, contentStart);
+  if (end === -1) return null;
+  return text.slice(contentStart, end).trim();
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`درخواست AI بعد از ${ms / 1000} ثانیه timeout شد`)),
+      ms
+    );
+    promise.then(
+      v => { clearTimeout(timer); resolve(v); },
+      e => { clearTimeout(timer); reject(e); }
+    );
+  });
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -198,7 +222,6 @@ export async function registerRoutes(
         : "";
 
       let parts: any[];
-      // isTechnical scoped here so JSON-key selection below can access it
       const isTechnical = !isImageMode && input.promptMode === "technical";
 
       // ── Output length directive ──────────────────────────────────────────────
@@ -209,8 +232,39 @@ export async function registerRoutes(
           ? "\n\nقانون طول خروجی — بلند: هر بخش را با حداکثر عمق و جزئیات بنویس. برای هر مفهوم مثال دقیق بیاور، تمام جزئیات فنی را پوشش بده و هیچ چیز را خلاصه نکن. متن باید بسیار جامع، کامل و تخصصی باشد."
           : "\n\nقانون طول خروجی — استاندارد: هر بخش را فشرده، مستقیم و بدون هیچ جمله‌ی اضافه یا تکراری بنویس. برای هر بخش حداکثر ۳ تا ۵ آیتم یا جمله — نه بیشتر. هیچ مقدمه، توضیح زمینه، مثال غیرضروری، یا شرح بدیهیات نداشته باش. فقط هسته‌ی اصلی و اطلاعات کاربردی. ساختار و عناوین بخش‌ها کاملاً حفظ شود.";
 
+      // ── All-in-one output format instruction (appended to parts) ────────────
+      const jsonKeys = isImageMode
+        ? `"artistic_style_atmosphere", "subject_pose_clothing_accessories", "environment_scene", "lighting", "photography_technical_specs", "face_replacement_instruction", "negative_prompt"`
+        : isTechnical
+          ? `"objective", "prerequisites", "execution_steps", "technical_notes", "expected_output", "negative_prompt"`
+          : `"role", "context", "task", "constraints", "output_format", "negative_prompt"`;
+
+      const enSections = isImageMode
+        ? "7-section structure (Artistic Style & Atmosphere, Subject Pose/Clothing/Accessories, Environment & Scene, Lighting, Photography Technique & Technical Specs, Face Replacement Instruction, Negative Prompt)"
+        : isTechnical
+          ? "6-section structure (Objective, Prerequisites & Knowledge, Execution Steps, Technical Notes & Warnings, Expected Output, Negative Prompt)"
+          : "6-section structure (Role, Context, Task, Constraints, Output Format, Negative Prompt)";
+
+      const allInOneFormat = `
+
+
+---
+خروجی نهایی را دقیقاً در این فرمت با همین جداکننده‌ها ارائه بده:
+
+===PERSIAN===
+[محتوای کامل به فارسی — دقیقاً طبق دستورالعمل بالا]
+===END_PERSIAN===
+
+===ENGLISH===
+[Translate the Persian output above into professional English. Maintain the exact ${enSections}. Translate only — do not add or remove content.]
+===END_ENGLISH===
+
+===JSON===
+[Convert the English output above into a JSON object with keys: ${jsonKeys}. Raw JSON only, no markdown fences, no extra text.]
+===END_JSON===`;
+
       if (isImageMode) {
-        // ── IMAGE MODE: IMAGE_SYSTEM_PROMPT ───────────────────────────────────
+        // ── IMAGE MODE ────────────────────────────────────────────────────────
         let mimeType = "image/jpeg";
         let imageData = input.image!;
 
@@ -225,79 +279,51 @@ export async function registerRoutes(
         }
 
         parts = [
-          { text: IMAGE_SYSTEM_PROMPT + expertDirective },
-          {
-            inlineData: { mimeType, data: imageData },
-          },
+          { text: IMAGE_SYSTEM_PROMPT + expertDirective + allInOneFormat },
+          { inlineData: { mimeType, data: imageData } },
         ];
       } else if (isTechnical) {
-        // ── TECHNICAL MODE: TECHNICAL_SYSTEM_PROMPT ───────────────────────────
+        // ── TECHNICAL MODE ────────────────────────────────────────────────────
         parts = [
-          { text: TECHNICAL_SYSTEM_PROMPT + expertDirective + lengthDirective },
+          { text: TECHNICAL_SYSTEM_PROMPT + expertDirective + lengthDirective + allInOneFormat },
           { text: `ورودی: ${input.idea}` },
         ];
       } else {
-        // ── ROLE-PLAY MODE: TEXT_SYSTEM_PROMPT + persona ─────────────────────
+        // ── ROLE-PLAY MODE ────────────────────────────────────────────────────
         const personaPrompt = PERSONA_PROMPTS[input.persona as keyof typeof PERSONA_PROMPTS] || "";
         parts = [
-          { text: TEXT_SYSTEM_PROMPT + expertDirective + lengthDirective + "\n\n" + personaPrompt },
+          { text: TEXT_SYSTEM_PROMPT + expertDirective + lengthDirective + "\n\n" + personaPrompt + allInOneFormat },
           { text: `ورودی: ${input.idea}` },
         ];
       }
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [{ role: "user", parts }],
-        config: {
-          temperature: input.persona === "Architect" ? 0.4 : 0.7,
-        },
-      });
+      // ── Single API call with 90s timeout ─────────────────────────────────────
+      const response = await withTimeout(
+        ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: [{ role: "user", parts }],
+          config: {
+            temperature: input.persona === "Architect" ? 0.4 : 0.7,
+          },
+        }),
+        90000
+      );
 
-      const generatedText = response.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!generatedText) {
+      const rawResponse = response.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawResponse) {
         console.error("Empty Gemini response:", JSON.stringify(response, null, 2));
         throw new Error("Gemini returned an empty response.");
       }
 
-      // ── English translation pass ────────────────────────────────────────────
-      let englishPrompt = generatedText;
-      try {
-        const translationInstruction = isImageMode
-          ? `Translate the following structured image reverse-engineering prompt into professional English. Maintain the exact 7-section structure (Artistic Style & Atmosphere, Subject Pose/Clothing/Accessories, Environment & Scene, Lighting, Photography Technique & Technical Specs, Face Replacement Instruction, Negative Prompt). Output ONLY the translated text — no introduction, no preamble, no explanation sentence before or after:\n\n${generatedText}`
-          : isTechnical
-            ? `Translate the following technical prompt into professional English, maintaining the exact 6-section structure (Objective, Prerequisites & Knowledge, Execution Steps, Technical Notes & Warnings, Expected Output, Negative Prompt). Output ONLY the translated text — no introduction, no preamble, no explanation sentence before or after:\n\n${generatedText}`
-            : `Translate the following structured prompt into professional English, maintaining the exact 6-section format (Role, Context, Task, Constraints, Output Format, Negative Prompt). Output ONLY the translated text — no introduction, no preamble, no explanation sentence before or after:\n\n${generatedText}`;
+      // ── Parse delimited sections ──────────────────────────────────────────────
+      const generatedText  = extractBetween(rawResponse, "===PERSIAN===",  "===END_PERSIAN===") ?? rawResponse;
+      const englishRaw     = extractBetween(rawResponse, "===ENGLISH===",  "===END_ENGLISH===");
+      const jsonRaw        = extractBetween(rawResponse, "===JSON===",     "===END_JSON===");
 
-        const translationResponse = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: [{ role: "user", parts: [{ text: translationInstruction }] }],
-        });
-        englishPrompt = translationResponse.candidates?.[0]?.content?.parts?.[0]?.text || generatedText;
-      } catch (e) {
-        console.error("Translation error:", e);
-      }
-
-      // ── JSON conversion pass ────────────────────────────────────────────────
-      let jsonPrompt = "{}";
-      try {
-        const jsonKeys = isImageMode
-          ? `"artistic_style_atmosphere", "subject_pose_clothing_accessories", "environment_scene", "lighting", "photography_technical_specs", "face_replacement_instruction", "negative_prompt"`
-          : isTechnical
-            ? `"objective", "prerequisites", "execution_steps", "technical_notes", "expected_output", "negative_prompt"`
-            : `"role", "context", "task", "constraints", "output_format", "negative_prompt"`;
-
-        const jsonResponse = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: [{
-            role: "user",
-            parts: [{ text: `Convert the following prompt into a clean JSON object with keys: ${jsonKeys}. Return ONLY the raw JSON object, no markdown fences:\n\n${englishPrompt}` }]
-          }],
-        });
-        const rawJsonText = jsonResponse.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-        jsonPrompt = rawJsonText.replace(/```json\n?|```/g, "").trim();
-      } catch (e) {
-        console.error("JSON conversion error:", e);
-      }
+      const englishPrompt  = englishRaw ?? generatedText;
+      const jsonPrompt     = jsonRaw
+        ? jsonRaw.replace(/```json\n?|```/g, "").trim()
+        : "{}";
 
       const prompt = await storage.createPrompt({
         persona: input.persona,
