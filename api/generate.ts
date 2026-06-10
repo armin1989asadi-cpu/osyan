@@ -1,7 +1,28 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
-import { db, prompts } from "./_db";
+import pg from "pg";
+import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+
+const prompts = pgTable("prompts", {
+  id: serial("id").primaryKey(),
+  persona: text("persona").notNull(),
+  inputIdea: text("input_idea").notNull(),
+  generatedPrompt: text("generated_prompt").notNull(),
+  englishPrompt: text("english_prompt"),
+  jsonPrompt: text("json_prompt"),
+  imageAnalysis: text("image_analysis"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+const { Pool } = pg;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL!,
+  ssl: { rejectUnauthorized: false },
+});
+const db = drizzle(pool, { schema: { prompts } });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 const generateInputSchema = z.object({
   persona: z.enum(["Gemini", "GPT-4", "Grok", "Claude", "Architect"]),
@@ -11,8 +32,6 @@ const generateInputSchema = z.object({
   promptMode: z.enum(["roleplay", "technical"]).optional(),
   outputLength: z.enum(["short", "standard", "long"]).optional(),
 });
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 const PERSONA_PROMPTS: Record<string, string> = {
   Gemini: "شخصیت: Osyan (پرسونای Gemini). استدلال عمیق، خلاقیت متعادل.",
@@ -24,15 +43,45 @@ const PERSONA_PROMPTS: Record<string, string> = {
 
 const TECHNICAL_SYSTEM_PROMPT = `You are Osyan — an elite AI Prompt Engineer specializing in technical prompts.
 RULES: Write ONLY the final prompt. Output language: PERSIAN.
-### ۱. هدف\n[CONTENT]\n### ۲. پیش‌نیازها و دانش\n[CONTENT]\n### ۳. مراحل اجرا\n[CONTENT]\n### ۴. نکات فنی و هشدارها\n[CONTENT]\n### ۵. خروجی مورد انتظار\n[CONTENT]\n### ۶. پرامپت منفی\n[CONTENT]`;
+### ۱. هدف
+[CONTENT]
+### ۲. پیش‌نیازها و دانش
+[CONTENT]
+### ۳. مراحل اجرا
+[CONTENT]
+### ۴. نکات فنی و هشدارها
+[CONTENT]
+### ۵. خروجی مورد انتظار
+[CONTENT]
+### ۶. پرامپت منفی
+[CONTENT]`;
 
 const TEXT_SYSTEM_PROMPT = `You are Osyan — the world's foremost AI Prompt Engineer.
 RULES: Write ONLY the prompt. Output language: PERSIAN.
-### نقش\n[CONTENT]\n### زمینه\n[CONTENT]\n### وظیفه\n[CONTENT]\n### محدودیت‌ها\n[CONTENT]\n**پروتکل Osyan:** کاربر با تایپ "osyan" نقش را ریست می‌کند.\n**پروتکل حافظه صفر:** هر تعامل را مستقل شروع کن.\n### فرمت خروجی\n[CONTENT]\n### پرامپت منفی\n[CONTENT]`;
+### نقش
+[CONTENT]
+### زمینه
+[CONTENT]
+### وظیفه
+[CONTENT]
+### محدودیت‌ها
+[CONTENT]
+**پروتکل Osyan:** کاربر با تایپ "osyan" نقش را ریست می‌کند.
+**پروتکل حافظه صفر:** هر تعامل را مستقل شروع کن.
+### فرمت خروجی
+[CONTENT]
+### پرامپت منفی
+[CONTENT]`;
 
 const IMAGE_SYSTEM_PROMPT = `تو Osyan هستی — متخصص ارشد مهندسی معکوس تصویر.
 هدف: تصویر را تحلیل و پرامپت جامع تولید کن. هیچ ارجاعی به تصویر اصلی نده.
-### ۱. سبک هنری و اتمسفر\n### ۲. سوژه — ژست، لباس و اکسسوری\n### ۳. محیط و صحنه\n### ۴. نورپردازی\n### ۵. تکنیک عکاسی\n### ۶. دستورالعمل جایگزینی چهره\n### ۷. پرامپت منفی`;
+### ۱. سبک هنری و اتمسفر
+### ۲. سوژه — ژست، لباس و اکسسوری
+### ۳. محیط و صحنه
+### ۴. نورپردازی
+### ۵. تکنیک عکاسی
+### ۶. دستورالعمل جایگزینی چهره
+### ۷. پرامپت منفی`;
 
 function extractBetween(text: string, s: string, e: string): string | null {
   const start = text.indexOf(s);
@@ -61,7 +110,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const input = generateInputSchema.parse(req.body);
     const isImageMode = !!input.image;
     const isTechnical = !isImageMode && input.promptMode === "technical";
-    const expertDirective = input.isExpertMode ? "\nحالت: تخصصی — از اصطلاحات پیشرفته استفاده شود." : "";
+    const expertDirective = input.isExpertMode
+      ? "\nحالت: تخصصی — از اصطلاحات پیشرفته استفاده شود." : "";
     const outputLength = input.outputLength || "standard";
     const lengthDirective = isImageMode ? ""
       : outputLength === "short" ? "\nقانون طول — کوتاه: هر بخش ۲ تا ۴ جمله."
@@ -74,7 +124,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? `"objective","prerequisites","execution_steps","technical_notes","expected_output","negative_prompt"`
       : `"role","context","task","constraints","output_format","negative_prompt"`;
 
-    const enSections = isImageMode ? "7-section image" : isTechnical ? "6-section technical" : "6-section role-play";
+    const enSections = isImageMode ? "7-section image"
+      : isTechnical ? "6-section technical" : "6-section role-play";
+
     const outputFormat = `\n\n---\n===PERSIAN===\n[محتوای کامل به فارسی]\n===END_PERSIAN===\n\n===ENGLISH===\n[Translate to English. Exact ${enSections} structure.]\n===END_ENGLISH===\n\n===JSON===\n[JSON with keys: ${jsonKeys}. Raw JSON only.]\n===END_JSON===`;
 
     let parts: any[];
@@ -135,4 +187,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ message: err.errors[0].message });
     return res.status(500).json({ message: (err as Error).message || "Internal Server Error" });
   }
-}
+}}
